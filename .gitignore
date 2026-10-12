@@ -1,0 +1,6 @@
+# arquivo temporário da exclusão física
+auxiliar.bin
+
+# arquivos de compilação
+*.o
+*.obj
