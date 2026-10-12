@@ -1,0 +1,9 @@
+# O código-fonte está em ISO-8859-1 (padrão do Dev-C++ no Windows).
+# No GitHub ele é guardado em UTF-8 para os acentos aparecerem certos,
+# e no computador volta a ser ISO-8859-1 para compilar como sempre.
+*.c   text working-tree-encoding=ISO-8859-1 eol=crlf
+
+# Arquivos de dados e executável: nunca mexer no conteúdo
+*.bin binary
+*.exe binary
+*.pdf binary
