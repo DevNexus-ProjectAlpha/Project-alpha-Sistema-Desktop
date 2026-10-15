@@ -176,23 +176,34 @@ void cadastrar(void);
 void Gerenciar(void);
 void frequencia(void);
 void financeiro(void);
+void operacoes(void);
+void relatorios(void);
 
 // Menu principal
 int menu(void){
 	int Opcoes;
 	system("cls");
-		printf("|========================================|\n");
-		printf("|                                        |\n");
-		printf("|        ESCOLHA AS OPÇÕES ABAIXO:       |\n");
-		printf("|                                        |\n");
-		printf("|========================================|\n\n");
-
-		printf(" [1] - Cadastrar: \n");
-		printf(" [2] - Gerenciar: \n");
-		printf(" [3] - Controle de Frequência: \n");
-		printf(" [4] - Controle Financeiro: \n");
-		printf(" [5] - Encerrar Sistema: \n");
-		printf("\n Opção Selecionada: ");
+		printf("==============================================\n");
+		printf("             ACADEMIA - DEV NEXUS\n");
+		printf("           Sistema de Gerenciamento\n");
+		printf("==============================================\n");
+		printf("  MENU PRINCIPAL\n");
+		printf("\n");
+		printf("  [1]  Cadastros\n");
+		printf("       Alunos, planos, pacotes e equipamentos\n");
+		printf("  [2]  Gerenciar\n");
+		printf("       Alterar, excluir e listar registros\n");
+		printf("  [3]  Operações\n");
+		printf("       Matrícula, recebimento e cancelamento\n");
+		printf("  [4]  Controle de Frequência\n");
+		printf("       Chamada e histórico de presença\n");
+		printf("  [5]  Controle Financeiro\n");
+		printf("       Faturamento, gastos e pagamentos\n");
+		printf("  [6]  Relatórios\n");
+		printf("       Consultas com filtros\n");
+		printf("  [0]  Encerrar sistema\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
 		Opcoes = 0;
 		scanf("%d", &Opcoes);
 		fflush(stdin);
@@ -204,17 +215,19 @@ void altera(const char *textMensage) {
 
 	do {
 		system("cls");
-		printf("|========================================|\n");
-		printf("|                                        |\n");
-		printf("|               GERENCIAR                |\n");
-		printf("|                                        |\n");
-		printf("|========================================|\n");
-
-		printf("\n [1] - Alterar %s: \n", textMensage);
-		printf(" [2] - Deletar %s: \n", textMensage);
-		printf(" [3] - Relatório de %s: \n", textMensage);
-		printf(" [4] - Voltar ao Sub Menu: \n");
-		printf("\n Opção Selecionada: ");
+		printf("==============================================\n");
+		printf("  GERENCIAR - %s\n", textMensage);
+		printf("==============================================\n");
+		printf("\n");
+		printf("  [1]  Alterar\n");
+		printf("       Corrige os dados de um registro\n");
+		printf("  [2]  Excluir\n");
+		printf("       Desativa um registro do sistema\n");
+		printf("  [3]  Relatório\n");
+		printf("       Lista os registros cadastrados\n");
+		printf("  [0]  Voltar ao submenu\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
 		OpcoesAlteracao = 0;
 		scanf("%d", &OpcoesAlteracao);
 		fflush(stdin);
@@ -226,7 +239,7 @@ void altera(const char *textMensage) {
 				break;
 			case 3:
 				break;
-			case 4:
+			case 0:
 				printf("\n Voltando...");
 				getch();
 				break;
@@ -236,7 +249,7 @@ void altera(const char *textMensage) {
 				getch();
 				break;
 		}
-	} while(OpcoesAlteracao != 4);
+	} while(OpcoesAlteracao != 0);
 }
 
 //1 - FUNÇÃO DE CADASTRO
@@ -245,22 +258,27 @@ void cadastrar(void) {
 
 	do {
 		system("cls");
-		printf("|========================================|\n");
-		printf("|                                        |\n");
-		printf("|               CADASTRO                 |\n");
-		printf("|                                        |\n");
-		printf("|========================================|\n");
-
-		printf(" [1] - Cadastro Aluno: \n");
-		printf(" [2] - Cadastro Profissionais: \n\n");
-		printf(" [3] - Cadastro de Treinos: \n");
-		printf(" [4] - Cadastro de Planos: \n");
-		printf(" [5] - Cadastro de Avaliações Físicas: \n");
-		printf(" [6] - Cadastro de Pacote de Modalidades: \n\n");
-		printf(" [7] - Cadastro de Agendamento: \n");
-		printf(" [8] - Cadastro de Equipamentos: \n\n");
-		printf(" [9] - Voltar ao Menu Inicial: \n");
-		printf("\n Opção Selecionada: ");
+		printf("==============================================\n");
+		printf("                  CADASTROS\n");
+		printf("==============================================\n");
+		printf("  PESSOAS\n");
+		printf("  [1]  Alunos\n");
+		printf("  [2]  Profissionais\n");
+		printf("\n");
+		printf("  SERVIÇOS E ACOMPANHAMENTO\n");
+		printf("  [3]  Treinos\n");
+		printf("  [4]  Planos\n");
+		printf("  [5]  Avaliações físicas\n");
+		printf("  [6]  Pacotes de modalidades\n");
+		printf("  [7]  Agenda de profissionais\n");
+		printf("\n");
+		printf("  ESTRUTURA E ATIVIDADES\n");
+		printf("  [8]  Equipamentos\n");
+		printf("  [9]  Atividades\n");
+		printf("\n");
+		printf("  [0]  Voltar ao menu principal\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
 		OpcoesCadastro = 0;
 		scanf("%d", &OpcoesCadastro);
 		fflush(stdin);
@@ -283,6 +301,10 @@ void cadastrar(void) {
 			case 8:
 				break;
 			case 9:
+				//Atividades
+				break;
+
+			case 0:
 				printf("\n Voltando...");
 				getch();
 				break;
@@ -292,7 +314,7 @@ void cadastrar(void) {
 				getch();
 				break;
 		}
-	} while(OpcoesCadastro != 9);
+	} while(OpcoesCadastro != 0);
 }
 
 //2 - FUNÇÃO DE GERENCIAR
@@ -301,23 +323,28 @@ void Gerenciar(void) {
 
 	do {
 		system("cls");
-		printf("|========================================|\n");
-		printf("|                                        |\n");
-		printf("|              GERENCIAR                 |\n");
-		printf("|                                        |\n");
-		printf("|========================================|\n");
-
-		printf("\n [1] - Gerenciar Alunos: \n");
-		printf(" [2] - Gerenciar Profissionais: \n\n");
-		printf(" [3] - Gerenciar Treinos: \n");
-		printf(" [4] - Gerenciar Planos: \n");
-		printf(" [5] - Gerenciar Matrículas: \n");
-		printf(" [6] - Gerenciar Avaliações Físicas: \n\n");
-		printf(" [7] - Gerenciar Agenda de Profissionais: \n");
-		printf(" [8] - Gerenciar Equipamentos: \n");
-		printf(" [9] - Gerenciar Pacote de Modalidades: \n\n");
-		printf(" [10] - Voltar ao Menu Inicial: \n");
-		printf("\n Opção Selecionada: ");
+		printf("==============================================\n");
+		printf("                  GERENCIAR\n");
+		printf("==============================================\n");
+		printf("  Escolha o cadastro a ser gerenciado\n");
+		printf("\n");
+		printf("  PESSOAS\n");
+		printf("  [1]  Alunos\n");
+		printf("  [2]  Profissionais\n");
+		printf("\n");
+		printf("  REGISTROS\n");
+		printf("  [3]  Treinos\n");
+		printf("  [4]  Planos\n");
+		printf("  [5]  Matrículas\n");
+		printf("  [6]  Avaliações físicas\n");
+		printf("  [7]  Agenda de profissionais\n");
+		printf("  [8]  Equipamentos\n");
+		printf("  [9]  Pacotes de modalidades\n");
+		printf("  [10] Atividades\n");
+		printf("\n");
+		printf("  [0]  Voltar ao menu principal\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
 		OpcoesGerenciar = 0;
 		scanf("%d", &OpcoesGerenciar);
 		fflush(stdin);
@@ -385,6 +412,13 @@ void Gerenciar(void) {
 
 		//===========================================================*/
 			case 10:
+				//Atividades
+				altera("Atividades");
+				break;
+
+		//===========================================================*/
+
+			case 0:
 			  	printf("\n Voltando...");
 				getch();
 			   	break;
@@ -396,7 +430,7 @@ void Gerenciar(void) {
 				getch();
 				break;
 		}
-	} while(OpcoesGerenciar != 10);
+	} while(OpcoesGerenciar != 0);
 }
 
 //3 - FUNÇÃO LISTAMENTO DE FREQUÊNCIA
@@ -405,17 +439,19 @@ void frequencia(void) {
 
 	do {
 		system("cls");
-		printf("|========================================|\n");
-		printf("|                                        |\n");
-		printf("|        ESCOLHA AS OPÇÕES ABAIXO:       |\n");
-		printf("|                                        |\n");
-		printf("|========================================|\n\n");
-
-		printf(" [1] - Listar Frequência de Alunos: \n");
-		printf(" [2] - Fazer Chamada de Alunos: \n");
-		printf(" [3] - Alterar Frequência de Alunos: \n");
-		printf(" [4] - Voltar ao Menu Inicial: \n");
-		printf("\n Opção Selecionada: ");
+		printf("==============================================\n");
+		printf("            CONTROLE DE FREQUÊNCIA\n");
+		printf("==============================================\n");
+		printf("\n");
+		printf("  [1]  Listar frequência\n");
+		printf("       Consulta as presenças dos alunos\n");
+		printf("  [2]  Fazer chamada\n");
+		printf("       Registra a presença do dia\n");
+		printf("  [3]  Alterar frequência\n");
+		printf("       Corrige uma presença registrada\n");
+		printf("  [0]  Voltar ao menu principal\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
 		Opcoes = 0;
 		scanf("%d", &Opcoes);
 		fflush(stdin);
@@ -427,7 +463,7 @@ void frequencia(void) {
 				break;
 			case 3:
 				break;
-			case 4:
+			case 0:
 				printf("\n Voltando...");
 				getch();
 				break;
@@ -437,7 +473,7 @@ void frequencia(void) {
 				getch();
 				break;
 		}
-	} while(Opcoes != 4);
+	} while(Opcoes != 0);
 }
 
 //4 - FUNÇÃO DE CONTROLE FINANCEIRO
@@ -446,18 +482,23 @@ void financeiro(void) {
 
 	do {
 		system("cls");
-		printf("|========================================|\n");
-		printf("|                                        |\n");
-		printf("|        ESCOLHA AS OPÇÕES ABAIXO:       |\n");
-		printf("|                                        |\n");
-		printf("|========================================|\n\n");
-
-		printf(" [1] - Listar Faturamento Mensal: \n");
-		printf(" [2] - Listar Faturamento por Planos: \n");
-		printf(" [3] - Listar Gastos Mensais: \n");
-		printf(" [4] - Pagamentos por Aluno: \n");
-		printf(" [5] - Voltar ao Menu Inicial: \n");
-		printf("\n Opção Selecionada: ");
+		printf("==============================================\n");
+		printf("             CONTROLE FINANCEIRO\n");
+		printf("==============================================\n");
+		printf("\n");
+		printf("  [1]  Faturamento mensal\n");
+		printf("       Total recebido em cada mês\n");
+		printf("  [2]  Faturamento por plano\n");
+		printf("       Receita separada por plano\n");
+		printf("  [3]  Gastos mensais\n");
+		printf("       Despesas lançadas no mês\n");
+		printf("  [4]  Pagamentos por aluno\n");
+		printf("       Histórico de pagamentos do aluno\n");
+		printf("  [5]  Cadastrar gastos\n");
+		printf("       Lança uma despesa da academia\n");
+		printf("  [0]  Voltar ao menu principal\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
 		Opcoes = 0;
 		scanf("%d", &Opcoes);
 		fflush(stdin);
@@ -472,6 +513,10 @@ void financeiro(void) {
 			case 4:
 				break;
 			case 5:
+				//Cadastrar gastos
+				break;
+
+			case 0:
 				printf("\n Voltando...");
 				getch();
 				break;
@@ -481,20 +526,118 @@ void financeiro(void) {
 				getch();
 				break;
 		}
-	} while(Opcoes != 5);
+	} while(Opcoes != 0);
+}
+
+//5 - FUNÇÃO DE OPERAÇÕES
+void operacoes(void) {
+	int Opcoes;
+
+	do {
+		system("cls");
+		printf("==============================================\n");
+		printf("                  OPERAÇÕES\n");
+		printf("==============================================\n");
+		printf("\n");
+		printf("  [1]  Efetuar matrícula\n");
+		printf("       Vincula aluno, plano e pacote\n");
+		printf("  [2]  Efetuar recebimento\n");
+		printf("       Dá baixa e gera o boleto seguinte\n");
+		printf("  [3]  Efetuar cancelamento\n");
+		printf("       Calcula a retenção e a devolução\n");
+		printf("  [0]  Voltar ao menu principal\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
+		Opcoes = 0;
+		scanf("%d", &Opcoes);
+		fflush(stdin);
+
+		switch(Opcoes) {
+			case 1:
+				break;
+			case 2:
+				break;
+			case 3:
+				break;
+			case 0:
+				printf("\n Voltando...");
+				getch();
+				break;
+
+			default:
+				printf("\n Opção Inválida!");
+				getch();
+				break;
+		}
+	} while(Opcoes != 0);
+}
+
+//6 - FUNÇÃO DE RELATÓRIOS
+void relatorios(void) {
+	int Opcoes;
+
+	do {
+		system("cls");
+		printf("==============================================\n");
+		printf("                  RELATÓRIOS\n");
+		printf("==============================================\n");
+		printf("\n");
+		printf("  [1]  Extrato de pagamentos\n");
+		printf("       Por período, aluno e situação\n");
+		printf("  [2]  Alunos por plano\n");
+		printf("       Por plano e situação da matrícula\n");
+		printf("  [3]  Alunos inadimplentes\n");
+		printf("       Por mês de referência e plano\n");
+		printf("  [4]  Matrículas por situação\n");
+		printf("       Por situação, período e plano\n");
+		printf("  [5]  Faturamento por plano e mês\n");
+		printf("       Por ano e plano\n");
+		printf("  [6]  Frequência\n");
+		printf("       Por aluno, período e atividade\n");
+		printf("  [0]  Voltar ao menu principal\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
+		Opcoes = 0;
+		scanf("%d", &Opcoes);
+		fflush(stdin);
+
+		switch(Opcoes) {
+			case 1:
+				break;
+			case 2:
+				break;
+			case 3:
+				break;
+			case 4:
+				break;
+			case 5:
+				break;
+			case 6:
+				break;
+			case 0:
+				printf("\n Voltando...");
+				getch();
+				break;
+
+			default:
+				printf("\n Opção Inválida!");
+				getch();
+				break;
+		}
+	} while(Opcoes != 0);
 }
 
 int main() {
 	setlocale(LC_ALL, "Portuguese");
 	int Opcoes;
 
-   	do{
-    	Opcoes=menu();
+	do {
+		Opcoes = menu();
 		switch(Opcoes) {
 			case 1:
-		    	//Cadastro
+				//Cadastro
 				cadastrar();
-			    break;
+				break;
 
 		//===========================================================*/
 
@@ -506,20 +649,34 @@ int main() {
 		//===========================================================*/
 
 			case 3:
+				//Operações
+				operacoes();
+				break;
+
+		//===========================================================*/
+
+			case 4:
 				//Controle de Frequência
 				frequencia();
 				break;
 
 		//===========================================================*/
 
-			case 4:
+			case 5:
 				//Controle Financeiro
 				financeiro();
 				break;
 
 		//===========================================================*/
 
-			case 5:
+			case 6:
+				//Relatórios
+				relatorios();
+				break;
+
+		//===========================================================*/
+
+			case 0:
 				printf("\n SISTEMA ENCERRADO! ");
 				break;
 
@@ -529,8 +686,8 @@ int main() {
 				printf("\n Opção Inválida!\n");
 				getch();
 				break;
-     	}
-   	}while(Opcoes!=5);
+		}
+	} while(Opcoes != 0);
 
-   	return 0;
+	return 0;
 }
