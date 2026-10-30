@@ -4,9 +4,10 @@
 #include <string.h>
 #include <conio.h>
 
-#define TF 100
+#define TF_REG 100 // TF de Registros. Quando sistema estiver finalizado, melhorias futuras: vetor dinâmico e gravação em arquivos.
+#define TF_MOV 1000 // TF de movimentações (TF é tamanho físico do vetor).
 
-// Structs
+// Structs:
 typedef struct {
 	int dia;
 	int mes;
@@ -47,14 +48,14 @@ typedef struct {
 	char  nome[31];
 	int   meses;
 	float valorMensal;
-	float descontoPercent;
+	float porcentagemDesconto;
 	int   ativo;
 } Plano;
 
 typedef struct {
 	int   codigo;
 	char  nome[61];
-	int   qtdAtividades;
+	int   qtdAtivPacote;     // diferente do contador global.
 	int   codAtividades[5];
 	float valor;
 	int   ativo;
@@ -68,7 +69,7 @@ typedef struct {
 	Data  dataInicio;
 	Data  dataTermino;
 	float valorTotal;
-	int   situacao;          // 1 = ativa, 2 = cancelada
+	int   situacao;    // 1 = ativa, 2 = cancelada.
 } Matricula;
 
 typedef struct {
@@ -79,7 +80,7 @@ typedef struct {
 	float valor;
 	Data  vencimento;
 	Data  dataPagamento;
-	int   situacao;          // 1 = pendente, 2 = paga, 3 = cancelada
+	int   situacao;   // 1 = pendente, 2 = paga, 3 = cancelada.
 } Cobranca;
 
 typedef struct {
@@ -119,8 +120,8 @@ typedef struct {
 	int codigo;
 	int codProfissional;
 	int codAtividade;
-	int diaSemana;           // 1 a 7
-	int horaInicio;
+	int diaSemana;      
+	int horaInicio;     
 	int horaFim;
 	int ativo;
 } Agenda;
@@ -132,7 +133,7 @@ typedef struct {
 	int   quantidade;
 	Data  dataAquisicao;
 	float valor;
-	int   situacao;          // 1 = bom, 2 = manutenção, 3 = inativo
+	int   situacao;   // 1 = bom, 2 = manutenção, 3 = inativo
 	Data  dataUltimaManutencao;
 	int   ativo;
 } Equipamento;
@@ -151,23 +152,26 @@ typedef struct {
 	char  categoria[31];
 	float valor;
 	Data  data;
+	int   ativo;
 } Gasto;
 
-// Vetores e contadores
-Aluno        alunos[TF];         int qtdAlunos = 0;
-Profissional profissionais[TF];  int qtdProfissionais = 0;
-Atividade    atividades[TF];     int qtdAtividades = 0;
-Plano        planos[TF];         int qtdPlanos = 0;
-Pacote       pacotes[TF];        int qtdPacotes = 0;
-Matricula    matriculas[TF];     int qtdMatriculas = 0;
-Cobranca     cobrancas[TF];      int qtdCobrancas = 0;
-Cancelamento cancelamentos[TF];  int qtdCancelamentos = 0;
-Treino       treinos[TF];        int qtdTreinos = 0;
-Avaliacao    avaliacoes[TF];     int qtdAvaliacoes = 0;
-Agenda       agendas[TF];        int qtdAgendas = 0;
-Equipamento  equipamentos[TF];   int qtdEquipamentos = 0;
-Presenca     presencas[TF];      int qtdPresencas = 0;
-Gasto        gastos[TF];         int qtdGastos = 0;
+// OBS: São variáveis globais, se preferir mudar avisar no grupo e seguir as regras do relatorio.		
+// Cada struct tem um vetor de TF e um contador de registros. 
+// Struct    Vetores:			     	//  Contadores:				 // Está separado: Struct -> vetor[TF] -> contador.
+Aluno        alunos[TF_REG];       		int qtdAlunos = 0;           // <-- qtd é quantidade, no caso é o contador de Alunos cadastrados.     
+Profissional profissionais[TF_REG];     int qtdProfissionais = 0;	 
+Atividade    atividades[TF_REG];   		int qtdAtividades = 0;
+Plano        planos[TF_REG];       		int qtdPlanos = 0;
+Pacote       pacotes[TF_REG];      		int qtdPacotes = 0;
+Matricula    matriculas[TF_MOV];        int qtdMatriculas = 0;
+Cobranca     cobrancas[TF_MOV];     	int qtdCobrancas = 0;
+Cancelamento cancelamentos[TF_MOV];  	int qtdCancelamentos = 0;
+Treino       treinos[TF_MOV];      		int qtdTreinos = 0;
+Avaliacao    avaliacoes[TF_MOV];    	int qtdAvaliacoes = 0;
+Agenda       agendas[TF_MOV];       	int qtdAgendas = 0;
+Equipamento  equipamentos[TF_REG];  	int qtdEquipamentos = 0;
+Presenca     presencas[TF_MOV];         int qtdPresencas = 0;
+Gasto        gastos[TF_MOV];       		int qtdGastos = 0;
 
 // Protótipos
 int  menu(void);
@@ -184,7 +188,7 @@ int menu(void){
 	int Opcoes;
 	system("cls");
 		printf("==============================================\n");
-		printf("             ACADEMIA - DEV NEXUS\n");
+		printf("           ACADEMIA - PROJECT ALPHA\n");
 		printf("           Sistema de Gerenciamento\n");
 		printf("==============================================\n");
 		printf("  MENU PRINCIPAL\n");
@@ -201,7 +205,7 @@ int menu(void){
 		printf("       Faturamento, gastos e pagamentos\n");
 		printf("  [6]  Relatórios\n");
 		printf("       Consultas com filtros\n");
-		printf("  [0]  Encerrar sistema\n");
+		printf("  [0]  Encerrar sistema\n");        // <--- OBS: encerrar padronizado com 0 em todos menus ok.
 		printf("----------------------------------------------\n");
 		printf("  Opção: ");
 		Opcoes = 0;
