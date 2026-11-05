@@ -4,7 +4,7 @@
 #include <string.h>
 #include <conio.h>
 
-#define TF_REG 100 // TF de Registros. Quando sistema estiver finalizado, melhorias futuras: vetor dinâmico e gravação em arquivos.
+#define TF_REG 100 // TF de Registros. Quando sistema estiver finalizado, mudaremos para um armazenamento inteligente com arquivos se tiver como kkk.
 #define TF_MOV 1000 // TF de movimentações (TF é tamanho físico do vetor).
 
 // Structs:
@@ -55,7 +55,7 @@ typedef struct {
 typedef struct {
 	int   codigo;
 	char  nome[61];
-	int   qtdAtivPacote;     // diferente do contador global.
+	int   qtdAtividades;
 	int   codAtividades[5];
 	float valor;
 	int   ativo;
@@ -152,7 +152,6 @@ typedef struct {
 	char  categoria[31];
 	float valor;
 	Data  data;
-	int   ativo;
 } Gasto;
 
 // OBS: São variáveis globais, se preferir mudar avisar no grupo e seguir as regras do relatorio.		
@@ -165,7 +164,7 @@ Plano        planos[TF_REG];       		int qtdPlanos = 0;
 Pacote       pacotes[TF_REG];      		int qtdPacotes = 0;
 Matricula    matriculas[TF_MOV];        int qtdMatriculas = 0;
 Cobranca     cobrancas[TF_MOV];     	int qtdCobrancas = 0;
-Cancelamento cancelamentos[TF_MOV];  	int qtdCancelamentos = 0;
+Cancelamento cancelamentos[TF_REG];  	int qtdCancelamentos = 0;
 Treino       treinos[TF_MOV];      		int qtdTreinos = 0;
 Avaliacao    avaliacoes[TF_MOV];    	int qtdAvaliacoes = 0;
 Agenda       agendas[TF_MOV];       	int qtdAgendas = 0;
