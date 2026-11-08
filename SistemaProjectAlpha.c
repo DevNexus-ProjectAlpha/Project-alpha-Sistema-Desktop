@@ -4,8 +4,36 @@
 #include <string.h>
 #include <conio.h>
 
-#define TF_REG 100 // TF de Registros. Quando sistema estiver finalizado, mudaremos para um armazenamento inteligente com arquivos se tiver como kkk.
+#define TF_REG 100 // TF de Registros. Quando sistema estiver finalizado, melhorias futuras: vetor dinâmico e gravação em arquivos.
 #define TF_MOV 1000 // TF de movimentações (TF é tamanho físico do vetor).
+
+// Entidades do Gerenciar (Serve como auxiliar de verificação Ex: case).
+enum { // define em sequência depois usa pra chamar a posição.
+	ENT_ALUNO,          // ENT_ALUNO vale 0 é a posição de "Alunos" no nomesEntidades. o altera() usa pra reaproveitar o menu.
+	ENT_PROFISSIONAL,   // 1
+	ENT_TREINO,         // 2
+	ENT_PLANO,          // 3
+	ENT_MATRICULA,      // 4
+	ENT_AVALIACAO,      // 5
+	ENT_AGENDA,         // 6
+	ENT_EQUIPAMENTO,    // 7
+	ENT_PACOTE,         // 8
+	ENT_ATIVIDADE       // 9
+};
+
+// Nomes das entidades, na mesma ordem do enum.
+char nomesEntidades[10][31] = {
+	"Alunos",
+	"Profissionais",
+	"Treinos",
+	"Planos",
+	"Matrículas",
+	"Avaliações Físicas",
+	"Agenda de Profissionais",
+	"Equipamentos",
+	"Pacote de Modalidades",
+	"Atividades"
+};
 
 // Structs:
 typedef struct {
@@ -55,7 +83,7 @@ typedef struct {
 typedef struct {
 	int   codigo;
 	char  nome[61];
-	int   qtdAtividades;
+	int   qtdAtivPacote;     // diferente do contador global.
 	int   codAtividades[5];
 	float valor;
 	int   ativo;
@@ -69,7 +97,7 @@ typedef struct {
 	Data  dataInicio;
 	Data  dataTermino;
 	float valorTotal;
-	int   situacao;    // 1 = ativa, 2 = cancelada.
+	int   situacao;     // 1 = ativa, 2 = cancelada.
 } Matricula;
 
 typedef struct {
@@ -152,6 +180,7 @@ typedef struct {
 	char  categoria[31];
 	float valor;
 	Data  data;
+	int   ativo;
 } Gasto;
 
 // OBS: São variáveis globais, se preferir mudar avisar no grupo e seguir as regras do relatorio.		
@@ -164,7 +193,7 @@ Plano        planos[TF_REG];       		int qtdPlanos = 0;
 Pacote       pacotes[TF_REG];      		int qtdPacotes = 0;
 Matricula    matriculas[TF_MOV];        int qtdMatriculas = 0;
 Cobranca     cobrancas[TF_MOV];     	int qtdCobrancas = 0;
-Cancelamento cancelamentos[TF_REG];  	int qtdCancelamentos = 0;
+Cancelamento cancelamentos[TF_MOV];  	int qtdCancelamentos = 0;
 Treino       treinos[TF_MOV];      		int qtdTreinos = 0;
 Avaliacao    avaliacoes[TF_MOV];    	int qtdAvaliacoes = 0;
 Agenda       agendas[TF_MOV];       	int qtdAgendas = 0;
@@ -174,7 +203,7 @@ Gasto        gastos[TF_MOV];       		int qtdGastos = 0;
 
 // Protótipos
 int  menu(void);
-void altera(const char *textMensage);
+void altera(int codEntidade);
 void cadastrar(void);
 void Gerenciar(void);
 void frequencia(void);
@@ -213,13 +242,13 @@ int menu(void){
 		return Opcoes;
 }
 
-void altera(const char *textMensage) {
+void altera(int codEntidade) {
 	int OpcoesAlteracao;
 
 	do {
 		system("cls");
 		printf("==============================================\n");
-		printf("  GERENCIAR - %s\n", textMensage);
+		printf("  GERENCIAR - %s\n", nomesEntidades[codEntidade]);
 		printf("==============================================\n");
 		printf("\n");
 		printf("  [1]  Alterar\n");
@@ -237,11 +266,113 @@ void altera(const char *textMensage) {
 
 		switch(OpcoesAlteracao) {
 			case 1:
+				// ================= ALTERAR: =================
+				switch(codEntidade) {
+					case ENT_ALUNO:
+						// alterarAluno();
+						break;
+					case ENT_PROFISSIONAL:
+						// alterarProfissional();
+						break;
+					case ENT_TREINO:
+						// alterarTreino();
+						break;
+					case ENT_PLANO:
+						// alterarPlano();
+						break;
+					case ENT_MATRICULA:
+						// alterarMatricula();
+						break;
+					case ENT_AVALIACAO:
+						// alterarAvaliacao();
+						break;
+					case ENT_AGENDA:
+						// alterarAgenda();
+						break;
+					case ENT_EQUIPAMENTO:
+						// alterarEquipamento();
+						break;
+					case ENT_PACOTE:
+						// alterarPacote();
+						break;
+					case ENT_ATIVIDADE:
+						// alterarAtividade();
+						break;
+				}
 				break;
+
 			case 2:
+				// ========== EXCLUIR: ============ (OBS: Matrícula não é excluída: chama o cancelamento)
+				switch(codEntidade) {
+					case ENT_ALUNO:
+						// excluirAluno();
+						break;
+					case ENT_PROFISSIONAL:
+						// excluirProfissional();
+						break;
+					case ENT_TREINO:
+						// excluirTreino();
+						break;
+					case ENT_PLANO:
+						// excluirPlano();
+						break;
+					case ENT_MATRICULA:
+						// efetuarCancelamento();
+						break;
+					case ENT_AVALIACAO:
+						// excluirAvaliacao();
+						break;
+					case ENT_AGENDA:
+						// excluirAgenda();
+						break;
+					case ENT_EQUIPAMENTO:
+						// excluirEquipamento();
+						break;
+					case ENT_PACOTE:
+						// excluirPacote();
+						break;
+					case ENT_ATIVIDADE:
+						// excluirAtividade();
+						break;
+				}
 				break;
+
 			case 3:
+				// =========== RELATÓRIO / LISTAR: =============
+				switch(codEntidade) {
+					case ENT_ALUNO:
+						// listarAlunos();
+						break;
+					case ENT_PROFISSIONAL:
+						// listarProfissionais();
+						break;
+					case ENT_TREINO:
+						// listarTreinos();
+						break;
+					case ENT_PLANO:
+						// listarPlanos();
+						break;
+					case ENT_MATRICULA:
+						// listarMatriculas();
+						break;
+					case ENT_AVALIACAO:
+						// listarAvaliacoes();
+						break;
+					case ENT_AGENDA:
+						// listarAgenda();
+						break;
+					case ENT_EQUIPAMENTO:
+						// listarEquipamentos();
+						break;
+					case ENT_PACOTE:
+						// listarPacotes();
+						break;
+					case ENT_ATIVIDADE:
+						// listarAtividades();
+						break;
+				}
 				break;
+
 			case 0:
 				printf("\n Voltando...");
 				getch();
@@ -355,68 +486,68 @@ void Gerenciar(void) {
 		switch(OpcoesGerenciar)	{
 			case 1:
 				//Alunos
-				altera("Alunos");
+				altera(ENT_ALUNO);
 				break;
 
 		//===========================================================*/
 
 			case 2:
 			  	//Profissionais
-			  	altera("Profissionais");
+			  	altera(ENT_PROFISSIONAL);
 		   		break;
 
 		//===========================================================*/
 
 			case 3:
 			   	//Treinos
-			   	altera("Treinos");
+			   	altera(ENT_TREINO);
 				break;
 
 		//===========================================================*/
 
 			case 4:
 			   	//Planos
-			   	altera("Planos");
+			   	altera(ENT_PLANO);
 				break;
 
 		//===========================================================*/
 		    case 5:
 		    	//Matrículas
-		    	altera("Matrículas");
+		    	altera(ENT_MATRICULA);
 		        break;
 
 		//===========================================================*/
 
 			case 6:
 			   	//Avaliações Físicas
-			   	altera("Avaliações Físicas");
+			   	altera(ENT_AVALIACAO);
 				break;
 
 		//===========================================================*/
 
 			case 7:
 			   	//Agenda de Profissionais
-			   	altera("Agenda de Profissionais");
+			   	altera(ENT_AGENDA);
 				break;
 
 		//===========================================================*/
 
 			case 8:
 			   	//Equipamentos
-			   	altera("Equipamentos");
+			   	altera(ENT_EQUIPAMENTO);
 				break;
 
 		//===========================================================*/
 			case 9:
 			   	//Pacote de Modalidades
-			   	altera("Pacote de Modalidades");
+			   	altera(ENT_PACOTE);
 				break;
 
 
 		//===========================================================*/
 			case 10:
 				//Atividades
-				altera("Atividades");
+				altera(ENT_ATIVIDADE);
 				break;
 
 		//===========================================================*/
