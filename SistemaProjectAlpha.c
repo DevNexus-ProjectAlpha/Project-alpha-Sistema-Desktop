@@ -9,7 +9,7 @@
 
 // Entidades do Gerenciar (Serve como auxiliar de verificação Ex: case).
 enum { // define em sequência depois usa pra chamar a posição.
-	ENT_ALUNO,          // ENT_ALUNO vale 0 é a posição de "Alunos" no nomesEntidades. o altera() usa pra reaproveitar o menu.
+	ENT_ALUNO,          // vale 0 -> pega a posição 0 -> "Alunos". E para o altera() pra reutilizar o menu.
 	ENT_PROFISSIONAL,   // 1
 	ENT_TREINO,         // 2
 	ENT_PLANO,          // 3
@@ -97,7 +97,7 @@ typedef struct {
 	Data  dataInicio;
 	Data  dataTermino;
 	float valorTotal;
-	int   situacao;     // 1 = ativa, 2 = cancelada.
+	int   situacao;    // 1 = ativa, 2 = cancelada.
 } Matricula;
 
 typedef struct {
