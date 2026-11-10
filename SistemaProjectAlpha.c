@@ -9,7 +9,7 @@
 
 // Entidades do Gerenciar (Serve como auxiliar de verificação Ex: case).
 enum { // define em sequência depois usa pra chamar a posição.
-	ENT_ALUNO,          // vale 0 -> pega a posição 0 -> "Alunos". E para o altera() pra reutilizar o menu.
+	ENT_ALUNO,          // ENT_ALUNO vale 0 é a posição de "Alunos" no nomesEntidades. o altera() usa pra reaproveitar o menu.
 	ENT_PROFISSIONAL,   // 1
 	ENT_TREINO,         // 2
 	ENT_PLANO,          // 3
@@ -97,7 +97,7 @@ typedef struct {
 	Data  dataInicio;
 	Data  dataTermino;
 	float valorTotal;
-	int   situacao;    // 1 = ativa, 2 = cancelada.
+	int   situacao;     // 1 = ativa, 2 = cancelada.
 } Matricula;
 
 typedef struct {
@@ -242,6 +242,233 @@ int menu(void){
 		return Opcoes;
 }
 
+// Funções de Alteração
+void alterarAluno() {
+	int OpcoesAlteracao, matricula, i, achou;
+
+	do {
+		system("cls");
+		printf("==============================================\n");
+		printf("  ALTERAR - Alunos\n");
+		printf("==============================================\n\n");
+		printf("  [1]  Matrícula\n");
+		printf("  [2]  Nome\n");
+		printf("  [3]  CPF\n");
+		printf("  [4]  Data Nascimento\n");
+		printf("  [5]  Telefone\n");
+		printf("  [6]  E-mail\n");
+		printf("  [7]  Ativo\n");
+		printf("  [0]  Voltar\n\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
+		scanf("%d", &OpcoesAlteracao);
+		
+		if(OpcoesAlteracao != 0) {
+			printf("\nInfome a Matrícula do Aluno: ");
+			scanf("%d", &matricula);
+			
+			achou = -1;
+			for (i = 0; i < qtdAlunos && achou == -1; i++) {
+				if (alunos[i].codigo == matricula) achou = i;
+			}
+			if(achou == -1) printf("\nAluno Não Encontrado!\n");
+			else {
+				fflush(stdin);
+				switch(OpcoesAlteracao) {
+					case 1:
+						printf("Informe a Nova Matrícula: ");
+						scanf("%d", &alunos[achou].codigo);
+						break;
+					case 2:
+						printf("Informe o Novo Nome: ");
+						fgets(alunos[achou].nome, 61, stdin);
+						break;
+					case 3:
+						printf("Informe o Novo CPF: ");
+						fgets(alunos[achou].cpf, 12, stdin);
+						break;
+					case 4:
+						printf("Informe a Nova Data de Nascimento (DD MM AAAA): ");
+						scanf("%d%d%d", &alunos[achou].dataNascimento.dia, &alunos[achou].dataNascimento.mes, &alunos[achou].dataNascimento.ano);
+						break;
+					case 5:
+						printf("Informe o Novo Telefone: ");
+						fgets(alunos[achou].telefone, 16, stdin);
+						break;
+					case 6:
+						printf("Informe o Novo E-mail: ");
+						fgets(alunos[achou].email, 61, stdin);
+						break;
+					case 7:
+						printf("Informe a Situação (1- Ativo / 0- Inativo): ");
+						scanf("%d", &alunos[achou].ativo);
+						break;
+					default:
+						printf("\nOpção Inválida!");
+						break;
+				}
+				printf("\nAlteração Realizada com Sucesso!\n");
+			}
+		}
+		system("pause");
+	} while(OpcoesAlteracao != 0);
+}
+
+void alterarProfissional() {
+	int OpcoesAlteracao, matricula, i, achou;
+
+	do {
+		system("cls");
+		printf("==============================================\n");
+		printf("  ALTERAR - Profissionais\n");
+		printf("==============================================\n\n");
+		printf("  [1]  Matrícula\n");
+		printf("  [2]  Nome\n");
+		printf("  [3]  CPF\n");
+		printf("  [4]  Telefone\n");
+		printf("  [5]  Função\n");
+		printf("  [6]  Ativo\n");
+		printf("  [0]  Voltar\n\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
+		scanf("%d", &OpcoesAlteracao);
+
+		if(OpcoesAlteracao != 0) {
+			printf("\nInforme a Matrícula do Profissional: ");
+			scanf("%d", &matricula);
+	
+			achou = -1;
+			for (i = 0; i < qtdProfissionais && achou == -1; i++) {
+				if (profissionais[i].codigo == matricula) achou = i;
+			}
+			if (achou == -1) printf("\nProfissional Não Encontrado!\n");
+			else {
+				fflush(stdin);
+				switch (OpcoesAlteracao) {
+					case 1:
+						printf("Informe a Nova Matrícula: ");
+						scanf("%d", &profissionais[achou].codigo);
+						break;
+					case 2:
+						printf("Informe o Novo Nome: ");
+						fgets(profissionais[achou].nome, 61, stdin);
+						break;
+					case 3:
+						printf("Informe o Novo CPF: ");
+						fgets(profissionais[achou].cpf, 12, stdin);
+						break;
+					case 4:
+						printf("Informe o Novo Telefone: ");
+						fgets(profissionais[achou].telefone, 16, stdin);
+						break;
+					case 5:
+						printf("Informe a Nova Função: ");
+						fgets(profissionais[achou].funcao, 31, stdin);
+						break;
+					case 6:
+						printf("Informe a Situação (1- Ativo / 0- Inativo): ");
+						scanf("%d", &profissionais[achou].ativo);
+						break;
+					default:
+						printf("\nOpção Inválida!\n");
+						break;
+				}
+				printf("\nAlteração Realizada com Sucesso!\n");
+			}
+		}
+		system("pause");
+	} while (OpcoesAlteracao != 0);
+}
+
+// Funções de Exclusão
+void excluirAluno() {
+	int matricula, achou, i;
+	
+	system("cls");
+	printf("==============================================\n");
+	printf("  EXCLUIR - Alunos\n");
+	printf("==============================================\n\n");
+	printf("Informe a Matrícula do Aluno: ");
+	scanf("%d", &matricula);
+	
+	achou = -1;
+	for (i = 0; i < qtdAlunos && achou == -1; i++) {
+		if (alunos[i].codigo == matricula && alunos[i].ativo == 1) {
+			achou = i;
+			alunos[i].ativo = 0;
+			printf("\nAluno Excluido com Sucesso!\n");
+		}
+	}
+	if (achou == -1) printf("\nAluno Não Encontrado!\n");
+	system("pause");
+}
+
+void excluirProfissional() {
+	int matricula, achou, i;
+	
+	system("cls");
+	printf("==============================================\n");
+	printf("  EXCLUIR - Profissionais\n");
+	printf("==============================================\n\n");
+	printf("Informe a Matrícula do Profissional: ");
+	scanf("%d", &matricula);
+	
+	achou = -1;
+	for (i = 0; i < qtdProfissionais && achou == -1; i++) {
+		if (profissionais[i].codigo == matricula && profissionais[i].ativo == 1) {
+			achou = i;
+			profissionais[i].ativo = 0;
+			printf("\nProfissional Excluido com Sucesso!\n");
+		}
+	}
+	if (achou == -1) printf("\nProfissional Não Encontrado!\n");
+	system("pause");
+}
+
+// Funções de Listagem
+void listarAlunos() {
+	int i;
+	
+	system("cls");
+	printf("==============================================\n");
+	printf("  LISTAGEM - Alunos\n");
+	printf("==============================================\n\n");
+	
+	for(i = 0; i < qtdAlunos; i++) {
+		if(alunos[i].ativo) {
+			printf("Matrícula: %d\n", alunos[i].codigo);
+			printf("Nome: %s\n", alunos[i].nome);
+			printf("CPF: %s\n", alunos[i].cpf);
+			printf("Data de Nascimento: %d/%d/%d\n", alunos[i].dataNascimento.dia, alunos[i].dataNascimento.mes, alunos[i].dataNascimento.ano);
+			printf("Telefone: %s\n", alunos[i].telefone);
+			printf("E-mail: %s\n", alunos[i].email);
+			printf("==============================================\n");
+		}
+	}
+	system("pause");
+}
+
+void listarProfissionais() {
+	int i;
+	
+	system("cls");
+	printf("==============================================\n");
+	printf("  LISTAGEM - Profissionais\n");
+	printf("==============================================\n\n");
+	
+	for(i = 0; i < qtdProfissionais; i++) {
+		if(profissionais[i].ativo) {
+			printf("Matrícula: %d\n", profissionais[i].codigo);
+			printf("Nome: %s\n", profissionais[i].nome);
+			printf("CPF: %s\n", profissionais[i].cpf);
+			printf("Telefone: %s\n", profissionais[i].telefone);
+			printf("Função: %s\n", profissionais[i].funcao);
+			printf("==============================================\n");
+		}
+	}
+	system("pause");
+}
+
 void altera(int codEntidade) {
 	int OpcoesAlteracao;
 
@@ -269,10 +496,16 @@ void altera(int codEntidade) {
 				// ================= ALTERAR: =================
 				switch(codEntidade) {
 					case ENT_ALUNO:
-						// alterarAluno();
+						if(!qtdAlunos) {
+							printf("\nNenhum Aluno foi Cadastrado!\n");
+							system("pause");
+						} else alterarAluno();
 						break;
 					case ENT_PROFISSIONAL:
-						// alterarProfissional();
+						if(!qtdProfissionais) {
+							printf("\nNenhum Profissional foi Cadastrado!\n");
+							system("pause");
+						} else alterarProfissional();
 						break;
 					case ENT_TREINO:
 						// alterarTreino();
@@ -305,10 +538,16 @@ void altera(int codEntidade) {
 				// ========== EXCLUIR: ============ (OBS: Matrícula não é excluída: chama o cancelamento)
 				switch(codEntidade) {
 					case ENT_ALUNO:
-						// excluirAluno();
+						if(!qtdAlunos) {
+							printf("\nNenhum Aluno foi Cadastrado!\n");
+							system("pause");
+						} else excluirAluno();
 						break;
 					case ENT_PROFISSIONAL:
-						// excluirProfissional();
+						if(!qtdProfissionais){
+							printf("\nNenhum Profissional foi Cadastrado!\n");
+							system("pause");
+						}else excluirProfissional();
 						break;
 					case ENT_TREINO:
 						// excluirTreino();
@@ -341,10 +580,16 @@ void altera(int codEntidade) {
 				// =========== RELATÓRIO / LISTAR: =============
 				switch(codEntidade) {
 					case ENT_ALUNO:
-						// listarAlunos();
+						if(!qtdAlunos) {
+							printf("\nNenhum Aluno foi Cadastrado!\n");
+							system("pause");
+						}else listarAlunos();
 						break;
 					case ENT_PROFISSIONAL:
-						// listarProfissionais();
+						if(!qtdProfissionais) {
+							printf("\nNenhum Profissional foi Cadastrado!\n");
+							system("pause");
+						}else listarProfissionais();
 						break;
 					case ENT_TREINO:
 						// listarTreinos();
@@ -374,7 +619,7 @@ void altera(int codEntidade) {
 				break;
 
 			case 0:
-				printf("\n Voltando...");
+				printf("\n Voltando...\n");
 				getch();
 				break;
 
@@ -419,8 +664,57 @@ void cadastrar(void) {
 
 		switch(OpcoesCadastro) {
 			case 1:
+				// Alunos
+				printf("Informe a Matrícula do Aluno: ");
+				scanf("%d", &alunos[qtdAlunos].codigo);
+				
+				fflush(stdin);
+				printf("Informe o Nome do Aluno: ");
+				fgets(alunos[qtdAlunos].nome, 61, stdin);
+				
+				fflush(stdin);
+				printf("Informe o CPF do Aluno: ");
+				fgets(alunos[qtdAlunos].cpf, 12, stdin);
+				
+				printf("Informe a Data de Nascimento (20 12 2000): ");
+				scanf("%d%d%d", &alunos[qtdAlunos].dataNascimento.dia, &alunos[qtdAlunos].dataNascimento.mes, &alunos[qtdAlunos].dataNascimento.ano);
+				
+				fflush(stdin);
+				printf("Informe o Número de Telefone: ");
+				fgets(alunos[qtdAlunos].telefone, 21, stdin);
+				
+				fflush(stdin);
+				printf("Informe um E-mail de Contato: ");
+				fgets(alunos[qtdAlunos].email, 61, stdin);
+				
+				alunos[qtdAlunos].ativo = 1;
+				
+				qtdAlunos++;
 				break;
 			case 2:
+				// Profissionais
+				printf("Informe a Matrícula do Profissional: ");
+				scanf("%d", &profissionais[qtdProfissionais].codigo);
+				
+				fflush(stdin);
+				printf("Informe o Nome do Profissional: ");
+				fgets(profissionais[qtdProfissionais].nome, 61, stdin);
+				
+				fflush(stdin);
+				printf("Informe o CPF do Profissional: ");
+				fgets(profissionais[qtdProfissionais].cpf, 12, stdin);
+				
+				fflush(stdin);
+				printf("Informe o Telefone do Profissional: ");
+				fgets(profissionais[qtdProfissionais].telefone, 21, stdin);
+				
+				fflush(stdin);
+				printf("Informe a Função do Profissional: ");
+				fgets(profissionais[qtdProfissionais].funcao, 31, stdin);
+				
+				profissionais[qtdProfissionais].ativo = 1;
+				
+				qtdProfissionais++;
 				break;
 			case 3:
 				break;
@@ -448,6 +742,7 @@ void cadastrar(void) {
 				getch();
 				break;
 		}
+		system("pause");
 	} while(OpcoesCadastro != 0);
 }
 
