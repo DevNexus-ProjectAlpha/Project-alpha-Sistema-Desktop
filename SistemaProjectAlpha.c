@@ -4,9 +4,6 @@
 #include <string.h>
 #include <conio.h>
 
-#define TF_REG 100 // TF de Registros. Quando sistema estiver finalizado, melhorias futuras: vetor dinâmico e gravação em arquivos.
-#define TF_MOV 1000 // TF de movimentações (TF é tamanho físico do vetor).
-
 // Entidades do Gerenciar (Serve como auxiliar de verificação Ex: case).
 enum { // define em sequência depois usa pra chamar a posição.
 	ENT_ALUNO,          // ENT_ALUNO vale 0 é a posição de "Alunos" no nomesEntidades. o altera() usa pra reaproveitar o menu.
@@ -183,23 +180,21 @@ typedef struct {
 	int   ativo;
 } Gasto;
 
-// OBS: São variáveis globais, se preferir mudar avisar no grupo e seguir as regras do relatorio.		
-// Cada struct tem um vetor de TF e um contador de registros. 
-// Struct    Vetores:			     	//  Contadores:				 // Está separado: Struct -> vetor[TF] -> contador.
-Aluno        alunos[TF_REG];       		int qtdAlunos = 0;           // <-- qtd é quantidade, no caso é o contador de Alunos cadastrados.     
-Profissional profissionais[TF_REG];     int qtdProfissionais = 0;	 
-Atividade    atividades[TF_REG];   		int qtdAtividades = 0;
-Plano        planos[TF_REG];       		int qtdPlanos = 0;
-Pacote       pacotes[TF_REG];      		int qtdPacotes = 0;
-Matricula    matriculas[TF_MOV];        int qtdMatriculas = 0;
-Cobranca     cobrancas[TF_MOV];     	int qtdCobrancas = 0;
-Cancelamento cancelamentos[TF_MOV];  	int qtdCancelamentos = 0;
-Treino       treinos[TF_MOV];      		int qtdTreinos = 0;
-Avaliacao    avaliacoes[TF_MOV];    	int qtdAvaliacoes = 0;
-Agenda       agendas[TF_MOV];       	int qtdAgendas = 0;
-Equipamento  equipamentos[TF_REG];  	int qtdEquipamentos = 0;
-Presenca     presencas[TF_MOV];         int qtdPresencas = 0;
-Gasto        gastos[TF_MOV];       		int qtdGastos = 0;
+// OBS: São variáveis globais, se preferir mudar avisar no grupo e seguir as regras do relatorio.
+Aluno        alunos;
+Profissional profissionais;
+Atividade    atividades;
+Plano        planos;
+Pacote       pacotes;
+Matricula    matriculas;
+Cobranca     cobrancas;
+Cancelamento cancelamentos;
+Treino       treinos;
+Avaliacao    avaliacoes;
+Agenda       agendas;
+Equipamento  equipamentos;
+Presenca     presencas;
+Gasto        gastos;
 
 // Protótipos
 int  menu(void);
@@ -210,6 +205,33 @@ void frequencia(void);
 void financeiro(void);
 void operacoes(void);
 void relatorios(void);
+
+// Função de Busca
+int busca(FILE *arq, int cod, int codEnt) {
+	rewind(arq);
+	
+	Aluno tempAluno;
+	Profissional tempProfissional;
+	
+	switch(codEnt) {
+		case ENT_ALUNO:
+			fread(&tempAluno, sizeof(Aluno), 1, arq);
+			while(!feof(arq) && tempAluno.codigo != cod) {
+				fread(&tempAluno, sizeof(Aluno), 1, arq);
+			}
+			if(!feof(arq)) return (ftell(arq) - sizeof(Aluno));
+			else return -1;   
+			break;
+		case ENT_PROFISSIONAL:
+			fread(&tempProfissional, sizeof(Profissional), 1, arq);
+			while(!feof(arq) && tempProfissional.codigo != cod) {
+				fread(&tempProfissional, sizeof(Profissional), 1, arq);
+			}
+			if(!feof(arq)) return (ftell(arq) - sizeof(Profissional));
+			else return -1;   
+			break;
+	}
+}
 
 // Menu principal
 int menu(void){
@@ -243,11 +265,13 @@ int menu(void){
 }
 
 // Funções de Alteração
-void alterarAluno() {
-	int OpcoesAlteracao, matricula, i, achou;
+void alterarAluno(void) {
+	FILE *arq;
+	int OpcoesAlteracao, matricula, i, pos, tempPos;
 
 	do {
 		system("cls");
+		fflush(stdin);
 		printf("==============================================\n");
 		printf("  ALTERAR - Alunos\n");
 		printf("==============================================\n\n");
@@ -264,58 +288,84 @@ void alterarAluno() {
 		scanf("%d", &OpcoesAlteracao);
 		
 		if(OpcoesAlteracao != 0) {
-			printf("\nInfome a Matrícula do Aluno: ");
-			scanf("%d", &matricula);
-			
-			achou = -1;
-			for (i = 0; i < qtdAlunos && achou == -1; i++) {
-				if (alunos[i].codigo == matricula) achou = i;
-			}
-			if(achou == -1) printf("\nAluno Não Encontrado!\n");
+			arq = fopen("alunos.bin", "rb+");
+			if(arq == NULL) printf("Erro na Abertura do Arquivo!\n\n");
 			else {
-				fflush(stdin);
-				switch(OpcoesAlteracao) {
-					case 1:
-						printf("Informe a Nova Matrícula: ");
-						scanf("%d", &alunos[achou].codigo);
-						break;
-					case 2:
-						printf("Informe o Novo Nome: ");
-						fgets(alunos[achou].nome, 61, stdin);
-						break;
-					case 3:
-						printf("Informe o Novo CPF: ");
-						fgets(alunos[achou].cpf, 12, stdin);
-						break;
-					case 4:
-						printf("Informe a Nova Data de Nascimento (DD MM AAAA): ");
-						scanf("%d%d%d", &alunos[achou].dataNascimento.dia, &alunos[achou].dataNascimento.mes, &alunos[achou].dataNascimento.ano);
-						break;
-					case 5:
-						printf("Informe o Novo Telefone: ");
-						fgets(alunos[achou].telefone, 16, stdin);
-						break;
-					case 6:
-						printf("Informe o Novo E-mail: ");
-						fgets(alunos[achou].email, 61, stdin);
-						break;
-					case 7:
-						printf("Informe a Situação (1- Ativo / 0- Inativo): ");
-						scanf("%d", &alunos[achou].ativo);
-						break;
-					default:
-						printf("\nOpção Inválida!");
-						break;
-				}
-				printf("\nAlteração Realizada com Sucesso!\n");
+				printf("\nInfome a Matrícula do Aluno: ");
+				scanf("%d", &matricula);
+				
+				pos = busca(arq, matricula, ENT_ALUNO);
+				if(pos != -1) {
+					fseek(arq, pos, 0);
+					fread(&alunos, sizeof(Aluno), 1, arq);
+					
+					fflush(stdin);
+					switch(OpcoesAlteracao) {
+						case 1:
+							do {
+								do {
+									printf("Informe a Matrícula do Aluno: ");
+									scanf("%d", &alunos.codigo);
+									if(alunos.codigo < 1 || alunos.codigo > 1000) printf("A Matrícula Deve Estar Entre 1 e 1000!\n\n");
+								} while(alunos.codigo < 1 || alunos.codigo > 1000);
+								
+								tempPos = busca(arq, alunos.codigo, ENT_ALUNO);
+								if(tempPos != -1) printf("Matrícula Já Cadastrada!\n\n");
+							} while(tempPos != -1);
+							fwrite(&alunos, sizeof(Aluno), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						case 2:
+							printf("Informe o Novo Nome: ");
+							fgets(alunos.nome, 61, stdin);
+							fwrite(&alunos, sizeof(Aluno), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						case 3:
+							printf("Informe o Novo CPF: ");
+							fgets(alunos.cpf, 12, stdin);
+							fwrite(&alunos, sizeof(Aluno), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						case 4:
+							printf("Informe a Nova Data de Nascimento (DD MM AAAA): ");
+							scanf("%d%d%d", &alunos.dataNascimento.dia, &alunos.dataNascimento.mes, &alunos.dataNascimento.ano);
+							fwrite(&alunos, sizeof(Aluno), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						case 5:
+							printf("Informe o Novo Telefone: ");
+							fgets(alunos.telefone, 16, stdin);
+							fwrite(&alunos, sizeof(Aluno), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						case 6:
+							printf("Informe o Novo E-mail: ");
+							fgets(alunos.email, 61, stdin);
+							fwrite(&alunos, sizeof(Aluno), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						case 7:
+							printf("Informe a Situação (1- Ativo / 0- Inativo): ");
+							scanf("%d", &alunos.ativo);
+							fwrite(&alunos, sizeof(Aluno), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						default:
+							printf("\nOpção Inválida!");
+							break;
+					}
+				} else printf("Aluno não Encontrado!\n\n");
 			}
+			fclose(arq);
 		}
 		system("pause");
 	} while(OpcoesAlteracao != 0);
 }
 
-void alterarProfissional() {
-	int OpcoesAlteracao, matricula, i, achou;
+void alterarProfissional(void) {
+	FILE *arq;
+	int OpcoesAlteracao, matricula, i, pos;
 
 	do {
 		system("cls");
@@ -334,138 +384,224 @@ void alterarProfissional() {
 		scanf("%d", &OpcoesAlteracao);
 
 		if(OpcoesAlteracao != 0) {
-			printf("\nInforme a Matrícula do Profissional: ");
-			scanf("%d", &matricula);
-	
-			achou = -1;
-			for (i = 0; i < qtdProfissionais && achou == -1; i++) {
-				if (profissionais[i].codigo == matricula) achou = i;
-			}
-			if (achou == -1) printf("\nProfissional Não Encontrado!\n");
+			arq = fopen("profissionais.bin", "rb+");
+			if(arq == NULL) printf("Erro na Abertura do Arquivo!\n\n");
 			else {
-				fflush(stdin);
-				switch (OpcoesAlteracao) {
-					case 1:
-						printf("Informe a Nova Matrícula: ");
-						scanf("%d", &profissionais[achou].codigo);
-						break;
-					case 2:
-						printf("Informe o Novo Nome: ");
-						fgets(profissionais[achou].nome, 61, stdin);
-						break;
-					case 3:
-						printf("Informe o Novo CPF: ");
-						fgets(profissionais[achou].cpf, 12, stdin);
-						break;
-					case 4:
-						printf("Informe o Novo Telefone: ");
-						fgets(profissionais[achou].telefone, 16, stdin);
-						break;
-					case 5:
-						printf("Informe a Nova Função: ");
-						fgets(profissionais[achou].funcao, 31, stdin);
-						break;
-					case 6:
-						printf("Informe a Situação (1- Ativo / 0- Inativo): ");
-						scanf("%d", &profissionais[achou].ativo);
-						break;
-					default:
-						printf("\nOpção Inválida!\n");
-						break;
-				}
-				printf("\nAlteração Realizada com Sucesso!\n");
+				printf("\nInforme a Matrícula do Profissional: ");
+				scanf("%d", &matricula);
+		
+				pos = busca(arq, matricula, ENT_PROFISSIONAL);
+				if(pos != -1) {
+					fseek(arq, pos, 0);
+					fflush(stdin);
+					switch (OpcoesAlteracao) {
+						case 1:
+							do {
+								do {
+									printf("Informe a Matrícula do Profissional: ");
+									scanf("%d", &profissionais.codigo);
+									if(profissionais.codigo < 1 || profissionais.codigo > 1000) printf("A Matrícula Deve Estar Entre 1 e 1000!\n\n");
+								} while(profissionais.codigo < 1 || profissionais.codigo > 1000);
+								
+								pos = busca(arq, profissionais.codigo, ENT_PROFISSIONAL);
+								if(pos != -1) printf("Matrícula Já Cadastrada!\n\n");
+							} while(pos != -1);
+							fwrite(&profissionais, sizeof(Profissional), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						case 2:
+							printf("Informe o Novo Nome: ");
+							fgets(profissionais.nome, 61, stdin);
+							fwrite(&profissionais, sizeof(Profissional), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						case 3:
+							printf("Informe o Novo CPF: ");
+							fgets(profissionais.cpf, 12, stdin);
+							fwrite(&profissionais, sizeof(Profissional), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						case 4:
+							printf("Informe o Novo Telefone: ");
+							fgets(profissionais.telefone, 16, stdin);
+							fwrite(&profissionais, sizeof(Profissional), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						case 5:
+							printf("Informe a Nova Função: ");
+							fgets(profissionais.funcao, 31, stdin);
+							fwrite(&profissionais, sizeof(Profissional), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						case 6:
+							printf("Informe a Situação (1- Ativo / 0- Inativo): ");
+							scanf("%d", &profissionais.ativo);
+							fwrite(&profissionais, sizeof(Profissional), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+							break;
+						default:
+							printf("\nOpção Inválida!\n");
+							break;
+					}
+				} else printf("\nProfissional Não Encontrado!\n");
 			}
+			fclose(arq);
 		}
 		system("pause");
 	} while (OpcoesAlteracao != 0);
 }
 
 // Funções de Exclusão
-void excluirAluno() {
-	int matricula, achou, i;
+void excluirAluno(void) {
+	FILE *arq, *temp;
+	int matricula, pos, i;
 	
 	system("cls");
 	printf("==============================================\n");
 	printf("  EXCLUIR - Alunos\n");
 	printf("==============================================\n\n");
-	printf("Informe a Matrícula do Aluno: ");
-	scanf("%d", &matricula);
 	
-	achou = -1;
-	for (i = 0; i < qtdAlunos && achou == -1; i++) {
-		if (alunos[i].codigo == matricula && alunos[i].ativo == 1) {
-			achou = i;
-			alunos[i].ativo = 0;
-			printf("\nAluno Excluido com Sucesso!\n");
-		}
+	arq = fopen("alunos.bin", "rb");
+	if(arq == NULL) printf("Erro na Abertura do Arquivo!\n\n");
+	else {
+		printf("Informe a Matrícula do Aluno: ");
+		scanf("%d", &matricula);
+		
+		pos = busca(arq, matricula, ENT_ALUNO);
+		if(pos != -1) {
+			fseek(arq, pos, 0);
+			fread(&alunos, sizeof(Aluno), 1, arq);
+			printf("==============================================\n");
+			printf("Matrícula: %d\n", alunos.codigo);
+			printf("Nome: %s", alunos.nome);
+			printf("CPF: %s", alunos.cpf);
+			printf("Data de Nascimento: %d/%d/%d\n", alunos.dataNascimento.dia, alunos.dataNascimento.mes, alunos.dataNascimento.ano);
+			printf("Telefone: %s", alunos.telefone);
+			printf("E-mail: %s", alunos.email);
+			printf("Ativo: ");
+			if(alunos.ativo == 1) printf("Sim\n");
+			else printf("Não\n");
+			printf("==============================================\n");
+			printf("Deseja excluir? S/N: ");
+			if(toupper(getche()) == 'S') {
+				temp = fopen("auxiliar.bin", "wb");
+				rewind(arq);
+				while(fread(&alunos, sizeof(Aluno), 1, arq) == 1)
+				if(alunos.codigo != matricula) fwrite(&alunos, sizeof(Aluno), 1, temp);
+				fclose(arq);
+				fclose(temp);
+				remove("alunos.bin");
+				rename("auxiliar.bin", "alunos.bin");
+				printf("\nO Aluno Foi Excluido com Sucesso!\n");
+			}
+		} else printf("\nAluno Não Encontrado!\n");
 	}
-	if (achou == -1) printf("\nAluno Não Encontrado!\n");
+	fclose(arq);
 	system("pause");
 }
 
-void excluirProfissional() {
-	int matricula, achou, i;
+void excluirProfissional(void) {
+	FILE *arq, *temp;
+	int matricula, pos, i;
 	
 	system("cls");
 	printf("==============================================\n");
 	printf("  EXCLUIR - Profissionais\n");
 	printf("==============================================\n\n");
-	printf("Informe a Matrícula do Profissional: ");
-	scanf("%d", &matricula);
 	
-	achou = -1;
-	for (i = 0; i < qtdProfissionais && achou == -1; i++) {
-		if (profissionais[i].codigo == matricula && profissionais[i].ativo == 1) {
-			achou = i;
-			profissionais[i].ativo = 0;
-			printf("\nProfissional Excluido com Sucesso!\n");
-		}
+	arq = fopen("profissionais.bin", "rb");
+	if(arq == NULL) printf("Erro na Abertura do Arquivo!\n\n");
+	else {
+		printf("Informe a Matrícula do Profissional: ");
+		scanf("%d", &matricula);
+		
+		pos = busca(arq, matricula, ENT_PROFISSIONAL);
+		if(!feof(arq)) {
+			fseek(arq, pos, 0);
+			fread(&profissionais, sizeof(Profissional), 1, arq);
+			printf("==============================================\n");
+			printf("Matrícula: %d\n", profissionais.codigo);
+			printf("Nome: %s", profissionais.nome);
+			printf("CPF: %s", profissionais.cpf);
+			printf("Telefone: %s", profissionais.telefone);
+			printf("Função: %s", profissionais.funcao);
+			printf("Ativo: ");
+			if(profissionais.ativo == 1) printf("Sim\n");
+			else printf("Não\n");
+			printf("==============================================\n");
+			printf("Deseja excluir? S/N: ");
+			if(toupper(getche()) == 'S') {
+			    temp = fopen("auxiliar.bin", "wb");
+			    rewind(arq);
+			    while(fread(&profissionais, sizeof(Profissional), 1, arq) == 1)
+			    if(profissionais.codigo != matricula) fwrite(&profissionais, sizeof(Profissional), 1, temp);
+			    fclose(arq);
+			    fclose(temp);
+				remove("profissionais.bin");
+				rename("auxiliar.bin", "profissionais.bin");
+				printf("\nO Profissional Foi Excluido com Sucesso!\n");
+			}
+		} else printf("\nProfissional Não Encontrado!\n");
 	}
-	if (achou == -1) printf("\nProfissional Não Encontrado!\n");
+	fclose(arq);
 	system("pause");
 }
 
 // Funções de Listagem
-void listarAlunos() {
+void listarAlunos(void) {
+	FILE *arq;
 	int i;
 	
 	system("cls");
 	printf("==============================================\n");
 	printf("  LISTAGEM - Alunos\n");
-	printf("==============================================\n\n");
+	printf("==============================================\n");
 	
-	for(i = 0; i < qtdAlunos; i++) {
-		if(alunos[i].ativo) {
-			printf("Matrícula: %d\n", alunos[i].codigo);
-			printf("Nome: %s\n", alunos[i].nome);
-			printf("CPF: %s\n", alunos[i].cpf);
-			printf("Data de Nascimento: %d/%d/%d\n", alunos[i].dataNascimento.dia, alunos[i].dataNascimento.mes, alunos[i].dataNascimento.ano);
-			printf("Telefone: %s\n", alunos[i].telefone);
-			printf("E-mail: %s\n", alunos[i].email);
+	arq = fopen("alunos.bin", "rb");
+	if(arq == NULL) printf("Erro na Abertura do Arquivo!\n\n");
+	else {
+		while(fread(&alunos, sizeof(Aluno), 1, arq) == 1) {
+			printf("Matrícula: %d\n", alunos.codigo);
+			printf("Nome: %s", alunos.nome);
+			printf("CPF: %s", alunos.cpf);
+			printf("Data de Nascimento: %d/%d/%d\n", alunos.dataNascimento.dia, alunos.dataNascimento.mes, alunos.dataNascimento.ano);
+			printf("Telefone: %s", alunos.telefone);
+			printf("E-mail: %s", alunos.email);
+			printf("Ativo: ");
+			if(alunos.ativo == 1) printf("Sim\n");
+			else printf("Não\n");
 			printf("==============================================\n");
 		}
 	}
+	fclose(arq);
 	system("pause");
 }
 
-void listarProfissionais() {
+void listarProfissionais(void) {
+	FILE *arq;
 	int i;
 	
 	system("cls");
 	printf("==============================================\n");
 	printf("  LISTAGEM - Profissionais\n");
-	printf("==============================================\n\n");
+	printf("==============================================\n");
 	
-	for(i = 0; i < qtdProfissionais; i++) {
-		if(profissionais[i].ativo) {
-			printf("Matrícula: %d\n", profissionais[i].codigo);
-			printf("Nome: %s\n", profissionais[i].nome);
-			printf("CPF: %s\n", profissionais[i].cpf);
-			printf("Telefone: %s\n", profissionais[i].telefone);
-			printf("Função: %s\n", profissionais[i].funcao);
+	arq = fopen("profissionais.bin", "rb");
+	if(arq == NULL) printf("Erro na Abertura do Arquivo!\n\n");
+	else {
+		while(fread(&profissionais, sizeof(Profissional), 1, arq) == 1) {
+			printf("Matrícula: %d\n", profissionais.codigo);
+			printf("Nome: %s", profissionais.nome);
+			printf("CPF: %s", profissionais.cpf);
+			printf("Telefone: %s", profissionais.telefone);
+			printf("Função: %s", profissionais.funcao);
+			printf("Ativo: ");
+			if(profissionais.ativo == 1) printf("Sim\n");
+			else printf("Não\n");
 			printf("==============================================\n");
 		}
 	}
+	fclose(arq);
 	system("pause");
 }
 
@@ -496,16 +632,10 @@ void altera(int codEntidade) {
 				// ================= ALTERAR: =================
 				switch(codEntidade) {
 					case ENT_ALUNO:
-						if(!qtdAlunos) {
-							printf("\nNenhum Aluno foi Cadastrado!\n");
-							system("pause");
-						} else alterarAluno();
+						alterarAluno();
 						break;
 					case ENT_PROFISSIONAL:
-						if(!qtdProfissionais) {
-							printf("\nNenhum Profissional foi Cadastrado!\n");
-							system("pause");
-						} else alterarProfissional();
+						alterarProfissional();
 						break;
 					case ENT_TREINO:
 						// alterarTreino();
@@ -538,16 +668,10 @@ void altera(int codEntidade) {
 				// ========== EXCLUIR: ============ (OBS: Matrícula não é excluída: chama o cancelamento)
 				switch(codEntidade) {
 					case ENT_ALUNO:
-						if(!qtdAlunos) {
-							printf("\nNenhum Aluno foi Cadastrado!\n");
-							system("pause");
-						} else excluirAluno();
+						excluirAluno();
 						break;
 					case ENT_PROFISSIONAL:
-						if(!qtdProfissionais){
-							printf("\nNenhum Profissional foi Cadastrado!\n");
-							system("pause");
-						}else excluirProfissional();
+						excluirProfissional();
 						break;
 					case ENT_TREINO:
 						// excluirTreino();
@@ -580,16 +704,10 @@ void altera(int codEntidade) {
 				// =========== RELATÓRIO / LISTAR: =============
 				switch(codEntidade) {
 					case ENT_ALUNO:
-						if(!qtdAlunos) {
-							printf("\nNenhum Aluno foi Cadastrado!\n");
-							system("pause");
-						}else listarAlunos();
+						listarAlunos();
 						break;
 					case ENT_PROFISSIONAL:
-						if(!qtdProfissionais) {
-							printf("\nNenhum Profissional foi Cadastrado!\n");
-							system("pause");
-						}else listarProfissionais();
+						listarProfissionais();
 						break;
 					case ENT_TREINO:
 						// listarTreinos();
@@ -632,8 +750,9 @@ void altera(int codEntidade) {
 }
 
 //1 - FUNÇÃO DE CADASTRO
-void cadastrar(void) {
-	int OpcoesCadastro;
+  void cadastrar(void) {
+	FILE *arq;
+	int OpcoesCadastro, pos;
 
 	do {
 		system("cls");
@@ -665,56 +784,80 @@ void cadastrar(void) {
 		switch(OpcoesCadastro) {
 			case 1:
 				// Alunos
-				printf("Informe a Matrícula do Aluno: ");
-				scanf("%d", &alunos[qtdAlunos].codigo);
-				
-				fflush(stdin);
-				printf("Informe o Nome do Aluno: ");
-				fgets(alunos[qtdAlunos].nome, 61, stdin);
-				
-				fflush(stdin);
-				printf("Informe o CPF do Aluno: ");
-				fgets(alunos[qtdAlunos].cpf, 12, stdin);
-				
-				printf("Informe a Data de Nascimento (20 12 2000): ");
-				scanf("%d%d%d", &alunos[qtdAlunos].dataNascimento.dia, &alunos[qtdAlunos].dataNascimento.mes, &alunos[qtdAlunos].dataNascimento.ano);
-				
-				fflush(stdin);
-				printf("Informe o Número de Telefone: ");
-				fgets(alunos[qtdAlunos].telefone, 21, stdin);
-				
-				fflush(stdin);
-				printf("Informe um E-mail de Contato: ");
-				fgets(alunos[qtdAlunos].email, 61, stdin);
-				
-				alunos[qtdAlunos].ativo = 1;
-				
-				qtdAlunos++;
+				arq = fopen("alunos.bin", "ab+");
+				if(arq == NULL) printf("Erro na Abertura do Arquivo\n\n");
+				else {
+					do {
+						do {
+							printf("Informe a Matrícula do Aluno: ");
+						scanf("%d", &alunos.codigo);
+							if(alunos.codigo < 1 || alunos.codigo > 1000) printf("A Matrícula Deve Estar Entre 1 e 1000!\n\n");
+						} while(alunos.codigo < 1 || alunos.codigo > 1000);
+						
+						pos = busca(arq, alunos.codigo, ENT_ALUNO);
+						if(pos != -1) printf("Matrícula Já Cadastrada!\n\n");
+					} while(pos != -1);
+					
+					fflush(stdin);
+					printf("Informe o Nome do Aluno: ");
+					fgets(alunos.nome, 61, stdin);
+					
+					fflush(stdin);
+					printf("Informe o CPF do Aluno: ");
+					fgets(alunos.cpf, 12, stdin);
+					
+					printf("Informe a Data de Nascimento (20 12 2000): ");
+					scanf("%d%d%d", &alunos.dataNascimento.dia, &alunos.dataNascimento.mes, &alunos.dataNascimento.ano);
+					
+					fflush(stdin);
+					printf("Informe o Número de Telefone: ");
+					fgets(alunos.telefone, 21, stdin);
+					
+					fflush(stdin);
+					printf("Informe um E-mail de Contato: ");
+					fgets(alunos.email, 61, stdin);
+					
+					alunos.ativo = 1;
+					fwrite(&alunos, sizeof(Aluno), 1, arq);
+				}
+				fclose(arq);
 				break;
 			case 2:
 				// Profissionais
-				printf("Informe a Matrícula do Profissional: ");
-				scanf("%d", &profissionais[qtdProfissionais].codigo);
-				
-				fflush(stdin);
-				printf("Informe o Nome do Profissional: ");
-				fgets(profissionais[qtdProfissionais].nome, 61, stdin);
-				
-				fflush(stdin);
-				printf("Informe o CPF do Profissional: ");
-				fgets(profissionais[qtdProfissionais].cpf, 12, stdin);
-				
-				fflush(stdin);
-				printf("Informe o Telefone do Profissional: ");
-				fgets(profissionais[qtdProfissionais].telefone, 21, stdin);
-				
-				fflush(stdin);
-				printf("Informe a Função do Profissional: ");
-				fgets(profissionais[qtdProfissionais].funcao, 31, stdin);
-				
-				profissionais[qtdProfissionais].ativo = 1;
-				
-				qtdProfissionais++;
+				arq = fopen("profissionais.bin", "ab+");
+				if(arq == NULL) printf("Erro na Abertura do Arquivo\n\n");
+				else {
+					do {
+						do {
+							printf("Informe a Matrícula do Profissional: ");
+							scanf("%d", &profissionais.codigo);
+							if(profissionais.codigo < 1 || profissionais.codigo > 1000) printf("A Matrícula Deve Estar Entre 1 e 1000!\n\n");
+						} while(profissionais.codigo < 1 || profissionais.codigo > 1000);
+						
+						pos = busca(arq, profissionais.codigo, ENT_PROFISSIONAL);
+						if(pos != -1) printf("Matrícula Já Cadastrada!\n\n");
+					} while(pos != -1);
+					
+					fflush(stdin);
+					printf("Informe o Nome do Profissional: ");
+					fgets(profissionais.nome, 61, stdin);
+					
+					fflush(stdin);
+					printf("Informe o CPF do Profissional: ");
+					fgets(profissionais.cpf, 12, stdin);
+					
+					fflush(stdin);
+					printf("Informe o Telefone do Profissional: ");
+					fgets(profissionais.telefone, 21, stdin);
+					
+					fflush(stdin);
+					printf("Informe a Função do Profissional: ");
+					fgets(profissionais.funcao, 31, stdin);
+					
+					profissionais.ativo = 1;
+					fwrite(&profissionais, sizeof(Profissional), 1, arq);
+				}
+				fclose(arq);
 				break;
 			case 3:
 				break;
@@ -733,13 +876,11 @@ void cadastrar(void) {
 				break;
 
 			case 0:
-				printf("\n Voltando...");
-				getch();
+				printf("\n  Voltando...\n");
 				break;
 
 			default:
 				printf("\n Opção Inválida!");
-				getch();
 				break;
 		}
 		system("pause");
