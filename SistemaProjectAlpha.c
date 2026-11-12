@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <conio.h>
+#include <ctype.h>
 
 // Entidades do Gerenciar (Serve como auxiliar de verificação Ex: case).
 enum { // define em sequência depois usa pra chamar a posição.
@@ -42,7 +43,7 @@ typedef struct {
 typedef struct {
 	int  codigo;
 	char nome[61];
-	char cpf[12];
+	char cpf[16];
 	Data dataNascimento;
 	char telefone[16];
 	char email[61];
@@ -52,8 +53,8 @@ typedef struct {
 typedef struct {
 	int  codigo;
 	char nome[61];
-	char cpf[12];
-	char telefone[16];
+	char cpf[15];
+	char telefone[17];
 	char funcao[31];
 	int  ativo;
 } Profissional;
@@ -233,6 +234,98 @@ int busca(FILE *arq, int cod, int codEnt) {
 	}
 }
 
+// Funções de Validação
+int validaExcedeu(char texto[]) {
+	fflush(stdin);
+    if(texto[strlen(texto)-1] != '\n') return 1;
+	else {
+		texto[strlen(texto)-1] = '\0';
+		return 0;
+	} 
+}
+
+int validaCPF(char cpf[]) {
+	int i;
+	if(strlen(cpf) == 14) {
+		if(cpf[3] == '.' && cpf[7] == '.' && cpf[11] == '-') {
+			for(i = 0; i < 14; i++) {
+				if(i != 3 && i != 7 && i != 11) {
+					if(!isdigit(cpf[i])) return 0;
+				}
+			}
+			return 1;
+		} else return 0;
+		
+	}
+	return 0;
+}
+
+int validaTelefone(char tel[]) {
+	int i;
+    if(strlen(tel) == 14) { // Formato: (XX) XXXX-XXXX
+        if(tel[0] == '(' && tel[3] == ')' && tel[4] == ' ' && tel[9] == '-') {
+            for(i = 0; i < 14; i++) {
+                if(i != 0 && i != 3 && i != 4 && i != 9) {
+                    if(!isdigit(tel[i])) return 0;
+                }
+            }
+            return 1;
+        }
+    } else if(strlen(tel) == 15) { // Formato: (XX) XXXXX-XXXX
+        if(tel[0] == '(' && tel[3] == ')' && tel[4] == ' ' && tel[10] == '-') {
+            for(i = 0; i < 15; i++) {
+                if(i != 0 && i != 3 && i != 4 && i != 10) {
+                    if(!isdigit(tel[i])) return 0;
+                }
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int validaData(Data d) {
+	if (d.ano < 1900 || d.ano > 2100) return 0; // Valida o Ano
+    if (d.mes < 1 || d.mes > 12) return 0; // Valida o Mês
+
+    // Valida os Dias Baseado no Mês
+    if (d.mes == 1 || d.mes == 3 || d.mes == 5 || d.mes == 7 || d.mes == 8 || d.mes == 10 || d.mes == 12) {
+        if (d.dia < 1 || d.dia > 31) return 0;
+    } else if (d.mes == 4 || d.mes == 6 || d.mes == 9 || d.mes == 11) {
+        if (d.dia < 1 || d.dia > 30) return 0;
+    } else if (d.mes == 2) {
+        // Validação Ano Bissexto Fevereiro
+        int bissexto = 0;
+        if ((d.ano % 4 == 0 && d.ano % 100 != 0) || (d.ano % 400 == 0)) bissexto = 1;
+
+        if (bissexto && (d.dia < 1 || d.dia > 29)) return 0;
+        if (!bissexto && (d.dia < 1 || d.dia > 28)) return 0;
+    }
+
+    return 1;
+}
+
+int validaEmail(char email[]) {
+	int i, contArroba = 0, contPonto = 0;
+    
+    for (i = 0; i < strlen(email); i++) {
+        char c = email[i];
+
+        if (c == '@') {
+            contArroba++;
+            if (contArroba > 1) return 0;
+        } else if (contArroba == 0) { // Antes do @
+            if (!isalnum(c) && c != '-' && c != '.') return 0;
+        } else { // Depois do @
+            if (c == '.') contPonto++;
+            else if (!isalnum(c)) return 0;
+        }
+    }
+
+    if (contArroba == 1 && contPonto >= 1) return 1;
+    return 0;
+}
+
 // Menu principal
 int menu(void){
 	int Opcoes;
@@ -298,6 +391,7 @@ void alterarAluno(void) {
 				if(pos != -1) {
 					fseek(arq, pos, 0);
 					fread(&alunos, sizeof(Aluno), 1, arq);
+					fseek(arq, pos, 0);
 					
 					fflush(stdin);
 					switch(OpcoesAlteracao) {
@@ -313,41 +407,65 @@ void alterarAluno(void) {
 								if(tempPos != -1) printf("Matrícula Já Cadastrada!\n\n");
 							} while(tempPos != -1);
 							fwrite(&alunos, sizeof(Aluno), 1, arq);
-							printf("\nAlteração Realizada com Sucesso!\n");
+							printf("Alteração Realizada com Sucesso!\n");
 							break;
 						case 2:
 							printf("Informe o Novo Nome: ");
 							fgets(alunos.nome, 61, stdin);
+							if(validaExcedeu(alunos.nome) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
 							fwrite(&alunos, sizeof(Aluno), 1, arq);
-							printf("\nAlteração Realizada com Sucesso!\n");
+							printf("Alteração Realizada com Sucesso!\n");
 							break;
 						case 3:
-							printf("Informe o Novo CPF: ");
-							fgets(alunos.cpf, 12, stdin);
+							do {
+								printf("Informe o Novo CPF: ");
+								fgets(alunos.cpf, 15, stdin);
+								alunos.cpf[15] = '\0';
+								
+								if(validaCPF(alunos.cpf) == 0) printf("Formato de CPF Inválido! \nInsira este Formato XXX.XXX.XXX-XX \nPreencha no Lugar do X Somente Números!\n\n");
+							} while(validaCPF(alunos.cpf) != 1);
 							fwrite(&alunos, sizeof(Aluno), 1, arq);
-							printf("\nAlteração Realizada com Sucesso!\n");
+							printf("Alteração Realizada com Sucesso!\n");
 							break;
 						case 4:
-							printf("Informe a Nova Data de Nascimento (DD MM AAAA): ");
-							scanf("%d%d%d", &alunos.dataNascimento.dia, &alunos.dataNascimento.mes, &alunos.dataNascimento.ano);
+							do {
+								printf("Informe a Nova Data de Nascimento (DD MM AAAA): ");
+								scanf("%d%d%d", &alunos.dataNascimento.dia, &alunos.dataNascimento.mes, &alunos.dataNascimento.ano);
+								
+								if(validaData(alunos.dataNascimento) == 0) printf("Insira Uma Data Valida! \nAno Entre 1900 e 2100 \nMês Entre 1 e 12 \nE os Dias Válidos de Cada Mês\n\n");
+							} while(validaData(alunos.dataNascimento) != 1);
 							fwrite(&alunos, sizeof(Aluno), 1, arq);
-							printf("\nAlteração Realizada com Sucesso!\n");
+							printf("Alteração Realizada com Sucesso!\n");
 							break;
 						case 5:
-							printf("Informe o Novo Telefone: ");
-							fgets(alunos.telefone, 16, stdin);
+							do {
+								printf("Informe o Novo Telefone: ");
+								fgets(alunos.telefone, 17, stdin);
+								alunos.telefone[strlen(alunos.telefone)-1] = '\0';
+								
+								if(validaTelefone(alunos.telefone) == 0) printf("Formato de Telefone Inválido! \nInsira este Formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX \nPreencha no Lugar do X Somente Números!\n\n");
+							} while(validaTelefone(alunos.telefone) != 1);
 							fwrite(&alunos, sizeof(Aluno), 1, arq);
-							printf("\nAlteração Realizada com Sucesso!\n");
+							printf("Alteração Realizada com Sucesso!\n");
 							break;
 						case 6:
-							printf("Informe o Novo E-mail: ");
-							fgets(alunos.email, 61, stdin);
+							do {
+								printf("Informe o Novo E-mail: ");
+								fgets(alunos.email, 61, stdin);
+								if(validaExcedeu(alunos.email) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
+								
+								if(validaEmail(alunos.email) == 0) printf("Email Deve conter um @ e um . depois Dele \nAntes do @ só pode Conter - ou _ \nDepois do @ Apenas .\n\n");
+							} while(validaEmail(alunos.email) != 1);
 							fwrite(&alunos, sizeof(Aluno), 1, arq);
-							printf("\nAlteração Realizada com Sucesso!\n");
+							printf("Alteração Realizada com Sucesso!\n");
 							break;
 						case 7:
-							printf("Informe a Situação (1- Ativo / 0- Inativo): ");
-							scanf("%d", &alunos.ativo);
+							do {
+								printf("Informe a Situação (1- Ativo / 0- Inativo): ");
+								scanf("%d", &alunos.ativo);
+								
+								if(alunos.ativo != 1 && alunos.ativo != 0) printf("Informe Uma Situação Válida!\n\n");
+							} while(alunos.ativo != 1 && alunos.ativo != 0);
 							fwrite(&alunos, sizeof(Aluno), 1, arq);
 							printf("\nAlteração Realizada com Sucesso!\n");
 							break;
@@ -393,6 +511,9 @@ void alterarProfissional(void) {
 				pos = busca(arq, matricula, ENT_PROFISSIONAL);
 				if(pos != -1) {
 					fseek(arq, pos, 0);
+					fread(&profissionais, sizeof(Profissional), 1, arq);
+					fseek(arq, pos, 0);
+					
 					fflush(stdin);
 					switch (OpcoesAlteracao) {
 						case 1:
@@ -412,32 +533,48 @@ void alterarProfissional(void) {
 						case 2:
 							printf("Informe o Novo Nome: ");
 							fgets(profissionais.nome, 61, stdin);
+							if(validaExcedeu(profissionais.nome) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
 							fwrite(&profissionais, sizeof(Profissional), 1, arq);
-							printf("\nAlteração Realizada com Sucesso!\n");
+							printf("Alteração Realizada com Sucesso!\n");
 							break;
 						case 3:
-							printf("Informe o Novo CPF: ");
-							fgets(profissionais.cpf, 12, stdin);
+							do {
+								printf("Informe o Novo CPF: ");
+								fgets(profissionais.cpf, 15, stdin);
+								profissionais.cpf[15] = '\0';
+								
+								if(validaCPF(profissionais.cpf) == 0) printf("Formato de CPF Inválido! \nInsira este Formato XXX.XXX.XXX-XX \nPreencha no Lugar do X Somente Números!\n\n");
+							} while(validaCPF(profissionais.cpf) != 1);
 							fwrite(&profissionais, sizeof(Profissional), 1, arq);
-							printf("\nAlteração Realizada com Sucesso!\n");
+							printf("Alteração Realizada com Sucesso!\n");
 							break;
 						case 4:
-							printf("Informe o Novo Telefone: ");
-							fgets(profissionais.telefone, 16, stdin);
+							do {
+								printf("Informe o Novo Telefone: ");
+								fgets(profissionais.telefone, 17, stdin);
+								profissionais.telefone[strlen(profissionais.telefone)-1] = '\0'; // Substitui \n por \0
+								
+								if(validaTelefone(profissionais.telefone) == 0) printf("Formato de Telefone Inválido! \nInsira este Formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX \nPreencha no Lugar do X Somente Números!\n\n");
+							} while(validaTelefone(profissionais.telefone) != 1);
 							fwrite(&profissionais, sizeof(Profissional), 1, arq);
-							printf("\nAlteração Realizada com Sucesso!\n");
+							printf("Alteração Realizada com Sucesso!\n");
 							break;
 						case 5:
 							printf("Informe a Nova Função: ");
 							fgets(profissionais.funcao, 31, stdin);
+							if(validaExcedeu(profissionais.funcao) == 1) printf("Somente os Primeiros 30 Caracteres Serão Cadastrados!\n\n");
 							fwrite(&profissionais, sizeof(Profissional), 1, arq);
-							printf("\nAlteração Realizada com Sucesso!\n");
+							printf("Alteração Realizada com Sucesso!\n");
 							break;
 						case 6:
-							printf("Informe a Situação (1- Ativo / 0- Inativo): ");
+							do {
+								printf("Informe a Situação (1- Ativo / 0- Inativo): ");
 							scanf("%d", &profissionais.ativo);
+								
+								if(profissionais.ativo != 1 && profissionais.ativo != 0) printf("Informe Uma Situação Válida!\n\n");
+							} while(profissionais.ativo != 1 && profissionais.ativo != 0);
 							fwrite(&profissionais, sizeof(Profissional), 1, arq);
-							printf("\nAlteração Realizada com Sucesso!\n");
+							printf("Alteração Realizada com Sucesso!\n");
 							break;
 						default:
 							printf("\nOpção Inválida!\n");
@@ -562,11 +699,11 @@ void listarAlunos(void) {
 	else {
 		while(fread(&alunos, sizeof(Aluno), 1, arq) == 1) {
 			printf("Matrícula: %d\n", alunos.codigo);
-			printf("Nome: %s", alunos.nome);
-			printf("CPF: %s", alunos.cpf);
+			printf("Nome: %s\n", alunos.nome);
+			printf("CPF: %s\n", alunos.cpf);
 			printf("Data de Nascimento: %d/%d/%d\n", alunos.dataNascimento.dia, alunos.dataNascimento.mes, alunos.dataNascimento.ano);
-			printf("Telefone: %s", alunos.telefone);
-			printf("E-mail: %s", alunos.email);
+			printf("Telefone: %s\n", alunos.telefone);
+			printf("E-mail: %s\n", alunos.email);
 			printf("Ativo: ");
 			if(alunos.ativo == 1) printf("Sim\n");
 			else printf("Não\n");
@@ -591,10 +728,10 @@ void listarProfissionais(void) {
 	else {
 		while(fread(&profissionais, sizeof(Profissional), 1, arq) == 1) {
 			printf("Matrícula: %d\n", profissionais.codigo);
-			printf("Nome: %s", profissionais.nome);
-			printf("CPF: %s", profissionais.cpf);
-			printf("Telefone: %s", profissionais.telefone);
-			printf("Função: %s", profissionais.funcao);
+			printf("Nome: %s\n", profissionais.nome);
+			printf("CPF: %s\n", profissionais.cpf);
+			printf("Telefone: %s\n", profissionais.telefone);
+			printf("Função: %s\n", profissionais.funcao);
 			printf("Ativo: ");
 			if(profissionais.ativo == 1) printf("Sim\n");
 			else printf("Não\n");
@@ -801,21 +938,41 @@ void altera(int codEntidade) {
 					fflush(stdin);
 					printf("Informe o Nome do Aluno: ");
 					fgets(alunos.nome, 61, stdin);
+					if(validaExcedeu(alunos.nome) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
 					
-					fflush(stdin);
-					printf("Informe o CPF do Aluno: ");
-					fgets(alunos.cpf, 12, stdin);
+					do {
+						fflush(stdin);
+						printf("Informe o CPF do Aluno: ");
+						fgets(alunos.cpf, 15, stdin);
+						alunos.cpf[15] = '\0';
+						
+						if(validaCPF(alunos.cpf) == 0) printf("Formato de CPF Inválido! \nInsira este Formato XXX.XXX.XXX-XX \nPreencha no Lugar do X Somente Números!\n\n");
+					} while(validaCPF(alunos.cpf) != 1);
+				
+					do {
+						printf("Informe a Data de Nascimento (DD MM AAAA): ");
+						scanf("%d%d%d", &alunos.dataNascimento.dia, &alunos.dataNascimento.mes, &alunos.dataNascimento.ano);
+								
+						if(validaData(alunos.dataNascimento) == 0) printf("Insira Uma Data Valida! \nAno Entre 1900 e 2100 \nMês Entre 1 e 12 \nE os Dias Válidos de Cada Mês\n\n");
+					} while(validaData(alunos.dataNascimento) != 1);
 					
-					printf("Informe a Data de Nascimento (20 12 2000): ");
-					scanf("%d%d%d", &alunos.dataNascimento.dia, &alunos.dataNascimento.mes, &alunos.dataNascimento.ano);
+					do {
+						fflush(stdin);
+						printf("Informe o Número de Telefone: ");
+						fgets(alunos.telefone, 17, stdin);
+						alunos.telefone[strlen(alunos.telefone)-1] = '\0';
+						
+						if(validaTelefone(alunos.telefone) == 0) printf("Formato de Telefone Inválido! \nInsira este Formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX \nPreencha no Lugar do X Somente Números!\n\n");
+					} while(validaTelefone(alunos.telefone) != 1);
 					
-					fflush(stdin);
-					printf("Informe o Número de Telefone: ");
-					fgets(alunos.telefone, 21, stdin);
-					
-					fflush(stdin);
-					printf("Informe um E-mail de Contato: ");
-					fgets(alunos.email, 61, stdin);
+					do {
+						fflush(stdin);
+						printf("Informe um E-mail de Contato: ");
+						fgets(alunos.email, 61, stdin);
+						if(validaExcedeu(alunos.email) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
+						
+						if(validaEmail(alunos.email) == 0) printf("Email Deve conter um @ e um . depois Dele \nAntes do @ só pode Conter - ou _ \nDepois do @ Apenas .\n\n");
+					} while(validaEmail(alunos.email) != 1);
 					
 					alunos.ativo = 1;
 					fwrite(&alunos, sizeof(Aluno), 1, arq);
@@ -841,18 +998,30 @@ void altera(int codEntidade) {
 					fflush(stdin);
 					printf("Informe o Nome do Profissional: ");
 					fgets(profissionais.nome, 61, stdin);
+					if(validaExcedeu(profissionais.nome) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
 					
-					fflush(stdin);
-					printf("Informe o CPF do Profissional: ");
-					fgets(profissionais.cpf, 12, stdin);
+					do {
+						fflush(stdin);
+						printf("Informe o CPF do Profissional: ");
+						fgets(profissionais.cpf, 15, stdin);
+						profissionais.cpf[15] = '\0';
+						
+						if(validaCPF(profissionais.cpf) == 0) printf("Formato de CPF Inválido! \nInsira este Formato XXX.XXX.XXX-XX \nPreencha no Lugar do X Somente Números!\n\n");
+					} while(validaCPF(profissionais.cpf) != 1);
 					
-					fflush(stdin);
-					printf("Informe o Telefone do Profissional: ");
-					fgets(profissionais.telefone, 21, stdin);
+					do {
+						fflush(stdin);
+						printf("Informe o Telefone do Profissional: ");
+						fgets(profissionais.telefone, 17, stdin);
+						profissionais.telefone[strlen(profissionais.telefone)-1] = '\0'; // Substitui \n por \0
+						
+						if(validaTelefone(profissionais.telefone) == 0) printf("Formato de Telefone Inválido! \nInsira este Formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX \nPreencha no Lugar do X Somente Números!\n\n");
+					} while(validaTelefone(profissionais.telefone) != 1);
 					
 					fflush(stdin);
 					printf("Informe a Função do Profissional: ");
 					fgets(profissionais.funcao, 31, stdin);
+					if(validaExcedeu(profissionais.funcao) == 1) printf("Somente os Primeiros 30 Caracteres Serão Cadastrados!\n\n");
 					
 					profissionais.ativo = 1;
 					fwrite(&profissionais, sizeof(Profissional), 1, arq);
