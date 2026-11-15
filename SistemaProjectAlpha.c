@@ -127,6 +127,7 @@ typedef struct {
 	char exercicios[10][41];
 	Data dataCriacao;
 	int  ativo;
+	int  quantidade;
 } Treino;
 
 typedef struct {
@@ -159,6 +160,7 @@ typedef struct {
 	int   quantidade;
 	Data  dataAquisicao;
 	float valor;
+	float vTotal;
 	int   situacao;   // 1 = bom, 2 = manutenção, 3 = inativo
 	Data  dataUltimaManutencao;
 	int   ativo;
@@ -229,6 +231,15 @@ int  lerValorPlano(float *valor);
 int  escolherTipoPlano(Plano *p);
 int  tipoPlanoRepetido(FILE *arq, char nome[], int codIgnorar);
 void mostrarPlano(Plano p);
+void validarCodigo(int cod);
+void cadastrarTreino(void);
+void alterarTreino(void);
+void excluirTreino(void);
+void listarTreinos(void);
+void cadastrarEquipamento(void);
+void alterarEquipamento(void);
+void excluirEquipamento(void);
+void listarEquipamentos(void);
 
 // Função de Busca
 int busca(FILE *arq, int cod, int codEnt) {
@@ -239,6 +250,8 @@ int busca(FILE *arq, int cod, int codEnt) {
 	Avaliacao tempAvaliacao;
 	Atividade tempAtividade;
 	Plano tempPlano;
+	Treino tempTreino;
+	Equipamento tempEquipamento;
 	
 	switch(codEnt) {
 		case ENT_ALUNO:
@@ -274,6 +287,18 @@ int busca(FILE *arq, int cod, int codEnt) {
 		case ENT_PLANO:
 			while(fread(&tempPlano, sizeof(Plano), 1, arq) == 1) {
 				if(tempPlano.codigo == cod) return (int)(ftell(arq) - sizeof(Plano));
+			}
+			return -1;
+			break;
+		case ENT_TREINO:
+			while(fread(&tempTreino, sizeof(Treino), 1, arq) == 1) {
+				if(tempTreino.codigo == cod) return (int)(ftell(arq) - sizeof(Treino));
+			}
+			return -1;
+			break;
+		case ENT_EQUIPAMENTO:
+			while(fread(&tempEquipamento, sizeof(Equipamento), 1, arq) == 1) {
+				if(tempEquipamento.codigo == cod) return (int)(ftell(arq) - sizeof(Equipamento));
 			}
 			return -1;
 			break;
@@ -403,6 +428,12 @@ int validaExcedeu(char texto[]) {
 		texto[strlen(texto)-1] = '\0';
 		return 0;
 	} 
+}
+
+void validarCodigo(int cod) {
+	if(cod < 1 || cod > 1000) {
+		printf("O Código Deve Estar Entre 1 e 1000!\n\n");
+	}
 }
 
 int validaCPF(char cpf[]) {
@@ -1855,6 +1886,1391 @@ void listarAtividades(void) {
 }
 // =================== FIM DO MENU ATIVIDADES ===================
 
+// ===== MENU TREINOS E EQUIPAMENTOS (parte do Igor) =====
+void alterarTreino() {
+	FILE *arq;
+	FILE *arqAlunos;
+	FILE *arqProfissionais;
+	
+	int i, opcao, pos, posProfissional;
+	int numExerc, opExerc, indice, duplicado, exibir;
+
+	do {
+		system("cls");
+		printf("==============================================\n");
+		printf("  ALTERAR - Treinos\n");
+		printf("==============================================\n\n");
+		printf("  [1]  Código do Profissional\n");
+		printf("  [2]  Nome do Treino\n");
+		printf("  [3]  Exercícios\n");
+		printf("  [4]  Objetivos\n");
+		printf("  [0]  Voltar\n\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
+		scanf("%d", &opcao);
+	
+		if(opcao !=0) {
+			arq = fopen("treinos.bin", "rb+");
+		
+			if(arq == NULL) {
+				printf("Erro na Abertura do Arquivo!\n\n");
+				system("pause");
+				system("cls");
+				return;
+			} else {
+				system("cls");	
+				switch(opcao) {
+					case 1:
+						// verifica se o codigo do treino existe.
+						do {	
+							printf("Informe o Código do Treino: ");
+							scanf("%d", &treinos.codigo);
+							validarCodigo(treinos.codigo);
+								
+						} while(treinos.codigo < 1 || treinos.codigo > 1000);
+							
+						pos = busca(arq, treinos.codigo, ENT_TREINO);
+						if(pos == -1) {
+							printf("[ERRO] Código não encontrado!\n\n");
+							fclose(arq);
+							
+							system("pause");
+							system("cls");
+							return;
+						} 
+						
+						fseek(arq, pos, SEEK_SET);
+						fread(&treinos, sizeof(Treino), 1, arq);
+							
+						arqProfissionais = fopen("profissionais.bin", "rb");
+						if(arqProfissionais == NULL) {
+							printf("Erro na Abertura do Arquivo!\n\n");
+							
+							fclose(arq);
+							system("pause");
+							system("cls");
+							return;
+						}
+						
+						// exibe as informações do profissional.
+						posProfissional = busca(arqProfissionais, treinos.codProfissional, ENT_PROFISSIONAL);
+						if(posProfissional != -1) {
+							fseek(arqProfissionais, posProfissional, SEEK_SET);
+							fread(&profissionais, sizeof(Profissional), 1, arqProfissionais);
+							printf("  Profissional Atual: %d | %s\n\n", profissionais.codigo, profissionais.nome);
+						}
+						
+						do {
+							printf("Novo Código do Profissional: ");
+							scanf("%d", &treinos.codProfissional);
+							validarCodigo(treinos.codProfissional);
+							
+						} while(treinos.codProfissional < 1 || treinos.codProfissional > 1000);
+					
+						// verifica se o codigo do profissional existe.
+						posProfissional = busca(arqProfissionais, treinos.codProfissional, ENT_PROFISSIONAL);
+						if(posProfissional == -1) {
+							printf("[ERRO] Profissional não Encontrado!\n\n");
+							fclose(arq);
+							fclose(arqProfissionais);
+							system("pause");
+							system("cls");
+							return;
+						}
+						
+						fseek(arq, pos, SEEK_SET);
+						fwrite(&treinos, sizeof(Treino), 1, arq);
+						printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+					
+						fclose(arqProfissionais);
+						system("pause");
+						system("cls");	
+					break;
+					case 2:
+						// verifica se o codigo do treino existe.
+						do {	
+							printf("Informe o Código do Treino: ");
+							scanf("%d", &treinos.codigo);
+							validarCodigo(treinos.codigo);
+								
+						} while(treinos.codigo < 1 || treinos.codigo > 1000);
+							
+						pos = busca(arq, treinos.codigo, ENT_TREINO);
+						if(pos == -1) {
+							printf("[ERRO] Código não encontrado!\n\n");
+							
+							fclose(arq);
+							system("pause");
+							system("cls");
+							return;
+						} 
+						
+						// lê as informações especificas do respectivo treino.
+						fseek(arq, pos, SEEK_SET);
+						fread(&treinos, sizeof(Treino), 1, arq);
+						
+						printf("  Nome do Treino: %s\n", treinos.nome);
+				
+						getchar();
+						printf("Informe o Novo Nome do Treino: ");
+						fgets(treinos.nome, 31, stdin);
+						
+						fseek(arq, pos, SEEK_SET);
+						fwrite(&treinos, sizeof(Treino), 1, arq);
+						printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+					
+						system("pause");
+						system("cls");	
+					break;
+					case 3:
+						system("cls");
+						printf("==============================================\n");
+						printf("  ALTERAR - Treinos\n");
+						printf("==============================================\n\n");
+						printf("  [1]  Alterar Todos os Exercícios\n");
+						printf("  [2]  Alterar Exercício Específico\n");
+						printf("  [3]  Adicionar Exercício\n");
+						printf("  [4]  Remover Exercício\n");
+						printf("  [0]  Voltar\n\n");
+						printf("----------------------------------------------\n");
+						printf("  Opção: ");
+						scanf("%d", &opExerc);
+						
+						switch(opExerc) {
+							case 1:
+								// verifica se o codigo do treino existe.
+								system("cls");
+								do {	
+									printf("Informe o Código do Treino: ");
+									scanf("%d", &treinos.codigo);
+									getchar();
+									validarCodigo(treinos.codigo);
+										
+								} while(treinos.codigo < 1 || treinos.codigo > 1000);
+									
+								pos = busca(arq, treinos.codigo, ENT_TREINO);
+								if(pos == -1) {
+									printf("[ERRO] Código não encontrado!\n\n");
+									
+									fclose(arq);
+									system("pause");
+									system("cls");
+									return;
+								} 
+								
+								// lê as informações especificas do respectivo treino.
+								fseek(arq, pos, SEEK_SET);
+								fread(&treinos, sizeof(Treino), 1, arq);
+								
+								printf("\nExercícios:\n");
+								for(i=0; i<treinos.quantidade; i++) {
+									printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+								}
+								
+								printf("\nNovos Exercícios:\n");
+								for(i=0; i<treinos.quantidade; i++) {
+									printf("  %d) Exercício: ", i+1);
+								    fgets(treinos.exercicios[i], 41, stdin);
+								}
+								
+								fseek(arq, pos, SEEK_SET);
+								fwrite(&treinos, sizeof(Treino), 1, arq);
+								printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+							
+								system("pause");
+								system("cls");	
+							break;
+							case 2:
+								// verifica se o codigo do treino existe.
+								system("cls");
+								do {	
+									printf("Informe o Código do Treino: ");
+									scanf("%d", &treinos.codigo);
+									getchar();
+									validarCodigo(treinos.codigo);
+										
+								} while(treinos.codigo < 1 || treinos.codigo > 1000);
+									
+								pos = busca(arq, treinos.codigo, ENT_TREINO);
+								if(pos == -1) {
+									printf("[ERRO] Código não encontrado!\n\n");
+									
+									fclose(arq);
+									system("pause");
+									system("cls");
+									return;
+								} 
+								
+								// lê as informações especificas do respectivo treino.
+								fseek(arq, pos, SEEK_SET);
+								fread(&treinos, sizeof(Treino), 1, arq);
+								
+								printf("\nExercícios:\n");
+								for(i=0; i<treinos.quantidade; i++) {
+									printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+								}
+								
+								printf("\nInforme o Número do Exercício a Alterar: ");
+								scanf("%d", &numExerc);
+								getchar();
+								
+								if(numExerc>=1 && numExerc<=treinos.quantidade) {
+									indice = numExerc - 1;
+									printf("  %d) Exercício: %s", indice+1, treinos.exercicios[indice]);
+											
+									printf("\nNovo Exercício: ");
+									fgets(treinos.exercicios[indice], 41, stdin);
+									
+									fseek(arq, pos, SEEK_SET);
+									fwrite(&treinos, sizeof(Treino), 1, arq);
+									printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+								
+									system("pause");
+									system("cls");	
+								} else {
+									printf("\n[AVISO] Número Inválido!\n\n");
+									
+									fclose(arq);
+									system("pause");
+									system("cls");
+									return;
+								}
+								
+							break;
+							case 3:
+								// verifica se o codigo do treino existe.
+								system("cls");
+								
+								do {	
+									printf("Informe o Código do Treino: ");
+									scanf("%d", &treinos.codigo);
+									getchar();
+									validarCodigo(treinos.codigo);
+										
+								} while(treinos.codigo < 1 || treinos.codigo > 1000);
+									
+								pos = busca(arq, treinos.codigo, ENT_TREINO);
+								if(pos == -1) {
+									printf("[ERRO] Código não encontrado!\n\n");
+									
+									fclose(arq);
+									system("pause");
+									system("cls");
+									return;
+								} 
+								
+								// lê as informações especificas do respectivo treino.
+								fseek(arq, pos, SEEK_SET);
+								fread(&treinos, sizeof(Treino), 1, arq);
+								
+								if(treinos.quantidade >= 10) {
+									printf("[AVISO] Quantidade Máxima de Exercícios Atingida!\n\n");
+									fclose(arq); 
+									
+									system("pause");
+									system("cls");
+									return;
+								} 
+								
+								printf("\nExercícios:\n");
+								for(i=0; i<treinos.quantidade; i++) {
+									printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+								}
+								
+								do {
+									if(exibir == 1) {
+										printf("Informe o Código do Treino: %d\n", treinos.codigo);
+									
+										printf("\nExercícios:\n");
+										for(i=0; i<treinos.quantidade; i++) {
+											printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+										}
+									}
+									
+									duplicado = 0;
+									exibir = 0;
+									
+									printf("\nNovo Exercício: ");
+									fgets(treinos.exercicios[treinos.quantidade], 41, stdin);
+								
+									for(i=0; i<treinos.quantidade; i++) {
+										if(stricmp(treinos.exercicios[treinos.quantidade], treinos.exercicios[i]) == 0) {
+											printf("\n[AVISO] Exercício já cadastrado!\n\n");
+											duplicado = 1;
+											exibir = 1;
+											
+											system("pause");
+											system("cls");
+										}
+									}
+								} while(duplicado == 1);
+								treinos.quantidade++;
+								
+								fseek(arq, pos, SEEK_SET);
+								fwrite(&treinos, sizeof(Treino), 1, arq);
+								printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+							
+								system("pause");
+								system("cls");
+							break;
+							case 4:
+								// verifica se o codigo do treino existe.
+								system("cls");
+								do {	
+									printf("Informe o Código do Treino: ");
+									scanf("%d", &treinos.codigo);
+									getchar();
+									validarCodigo(treinos.codigo);
+										
+								} while(treinos.codigo < 1 || treinos.codigo > 1000);
+									
+								pos = busca(arq, treinos.codigo, ENT_TREINO);
+								if(pos == -1) {
+									printf("[ERRO] Código não encontrado!\n\n");
+									
+									fclose(arq);
+									system("pause");
+									system("cls");
+									return;
+								} 
+								
+								// lê as informações especificas do respectivo treino.
+								fseek(arq, pos, SEEK_SET);
+								fread(&treinos, sizeof(Treino), 1, arq);
+								
+								if(treinos.quantidade == 1) {
+									printf("[AVISO] O Treino deve Possuir pelo menos 1 Exercício Cadastrado!\n\n");
+									fclose(arq); 
+									
+									system("pause");
+									system("cls");
+									return;
+								} 
+								
+								printf("\nExercícios:\n");
+								for(i=0; i<treinos.quantidade; i++) {
+									printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+								}
+								
+								printf("\nInforme o Número do Exercício a Remover: ");
+								scanf("%d", &numExerc);
+								getchar();
+									
+								if(numExerc>=1 && numExerc<=treinos.quantidade) {
+									indice = numExerc - 1;
+									printf("  %d) Exercício: %s", indice+1, treinos.exercicios[indice]);
+												
+									printf("\nDeseja Remover o Exercício? (S/N): ");
+									if(toupper(getche()) == 'S') {
+										for(i=indice; i<=treinos.quantidade-2; i++) {
+											strcpy(treinos.exercicios[i], treinos.exercicios[i+1]);
+										}
+										treinos.quantidade --;
+											
+										fseek(arq, pos, SEEK_SET);
+										fwrite(&treinos, sizeof(Treino), 1, arq);
+										printf("\n\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+										
+										fclose(arq);
+										system("pause");
+										system("cls");
+										return;	
+									} else {
+										printf("\n[AVISO] Exclusão Cancelada!\n");
+										
+										fclose(arq);
+										system("pause");
+										system("cls");
+										return;
+									}
+									
+								} else {
+									printf("\n[AVISO] Número Inválido!\n\n");
+									
+									fclose(arq);
+									system("pause");
+									system("cls");
+									return;
+								}
+							break;
+						}
+					break;
+					case 4:
+						// verifica se o codigo do treino existe.
+						do {
+							do {	
+							printf("Informe o Código do Treino: ");
+							scanf("%d", &treinos.codigo);
+							validarCodigo(treinos.codigo);
+								
+							} while(treinos.codigo < 1 || treinos.codigo > 1000);
+								
+							pos = busca(arq, treinos.codigo, ENT_TREINO);
+							if(pos == -1) {
+								printf("[ERRO] Código não encontrado!\n\n");
+								
+								fclose(arq);
+								system("pause");
+								system("cls");
+							} 
+						} while(pos == -1);
+						
+						// lê as informações especificas do respectivo treino.
+						fseek(arq, pos, SEEK_SET);
+						fread(&treinos, sizeof(Treino), 1, arq);
+						
+						printf("  Objetivo: %s\n", treinos.objetivo);
+				
+						getchar();
+						printf("Informe o Novo Objetivo: ");
+						fgets(treinos.objetivo, 31, stdin);
+						
+						fseek(arq, pos, SEEK_SET);
+						fwrite(&treinos, sizeof(Treino), 1, arq);
+						printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+					
+						system("pause");
+						system("cls");	
+					break;
+					default:
+						printf("\n Opção Inválida!");
+					break;
+				}
+				fclose(arq);
+			}	
+		}
+	} while(opcao !=0);	
+}
+
+// Função Alterar Equipamento
+void alterarEquipamento() {
+	FILE *arq;
+	Equipamento equipamentos;
+	
+	int pos, opcao;
+	
+	do {
+		system("cls");
+		printf("==============================================\n");
+		printf("  ALTERAR - Equipamentos\n");
+		printf("==============================================\n\n");
+		printf("  [1]  Nome do Equipamento\n"); // Ok
+		printf("  [2]  Tipo do Equipamento\n"); // Ok
+		printf("  [3]  Data da Aquisição\n"); // Ok
+		printf("  [4]  Data da Última Manutenção\n"); // Ok
+		printf("  [5]  Situação\n"); // Ok
+		printf("  [6]  Valor\n");
+		printf("  [7]  Quantidade\n");
+		printf("  [0]  Voltar\n\n");
+		printf("----------------------------------------------\n");
+		printf("  Opção: ");
+		scanf("%d", &opcao);
+		
+		if(opcao !=0) {
+			arq = fopen("equipamentos.bin", "rb+");
+		
+			if(arq == NULL) {
+				printf("Erro na Abertura do Arquivo!\n\n");
+				system("pause");
+				system("cls");
+				return;
+			} else {
+				system("cls");	
+				switch(opcao) {
+					
+					case 1:
+						// verifica se o codigo do treino existe.
+						do {	
+							printf("Informe o Código do Equipamento: ");
+							scanf("%d", &equipamentos.codigo);
+							validarCodigo(equipamentos.codigo);
+								
+						} while(equipamentos.codigo < 1 || equipamentos.codigo > 1000);
+							
+						pos = busca(arq, equipamentos.codigo, ENT_EQUIPAMENTO);
+						if(pos == -1) {
+							printf("[ERRO] Código não encontrado!\n\n");
+							
+							fclose(arq);
+							system("pause");
+							system("cls");
+							return;
+						} 
+						
+						// lê as informações especificas do respectivo treino.
+						fseek(arq, pos, SEEK_SET);
+						fread(&equipamentos, sizeof(Equipamento), 1, arq);
+						
+						printf("  Nome do Equipamento: %s\n", equipamentos.nome);
+				
+						getchar();
+						printf("Informe o Novo Nome do Equipamento: ");
+						fgets(equipamentos.nome, 31, stdin);
+						
+						fseek(arq, pos, SEEK_SET);
+						fwrite(&equipamentos, sizeof(Equipamento), 1, arq);
+						printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+					
+						system("pause");
+						system("cls");	
+					break;
+					case 2:
+						// verifica se o codigo do treino existe.
+						do {	
+							printf("Informe o Código do Equipamento: ");
+							scanf("%d", &equipamentos.codigo);
+							validarCodigo(equipamentos.codigo);
+								
+						} while(equipamentos.codigo < 1 || equipamentos.codigo > 1000);
+							
+						pos = busca(arq, equipamentos.codigo, ENT_EQUIPAMENTO);
+						if(pos == -1) {
+							printf("[ERRO] Código não encontrado!\n\n");
+							
+							fclose(arq);
+							system("pause");
+							system("cls");
+							return;
+						} 
+						
+						// lê as informações especificas do respectivo treino.
+						fseek(arq, pos, SEEK_SET);
+						fread(&equipamentos, sizeof(Equipamento), 1, arq);
+						
+						printf("  Tipo do Equipamento: %s\n", equipamentos.tipo);
+				
+						getchar();
+						printf("Informe o Novo Tipo do Equipamento: ");
+						fgets(equipamentos.tipo, 31, stdin);
+						
+						fseek(arq, pos, SEEK_SET);
+						fwrite(&equipamentos, sizeof(Equipamento), 1, arq);
+						printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+					
+						system("pause");
+						system("cls");
+					break;
+					case 3:
+						// verifica se o codigo do treino existe.
+						do {	
+							printf("Informe o Código do Equipamento: ");
+							scanf("%d", &equipamentos.codigo);
+							validarCodigo(equipamentos.codigo);
+								
+						} while(equipamentos.codigo < 1 || equipamentos.codigo > 1000);
+							
+						pos = busca(arq, equipamentos.codigo, ENT_EQUIPAMENTO);
+						if(pos == -1) {
+							printf("[ERRO] Código não encontrado!\n\n");
+							
+							fclose(arq);
+							system("pause");
+							system("cls");
+							return;
+						} 
+						
+						// lê as informações especificas do respectivo treino.
+						fseek(arq, pos, SEEK_SET);
+						fread(&equipamentos, sizeof(Equipamento), 1, arq);
+						
+						printf("  Data de Aquisição: %d/%d/%d\n\n", equipamentos.dataAquisicao.dia, equipamentos.dataAquisicao.mes, equipamentos.dataAquisicao.ano);
+				
+						printf("Informe a Nova Data de Aquisição (DD MM AAAA): ");
+						scanf("%d%d%d", &equipamentos.dataAquisicao.dia, &equipamentos.dataAquisicao.mes, &equipamentos.dataAquisicao.ano);
+						
+						fseek(arq, pos, SEEK_SET);
+						fwrite(&equipamentos, sizeof(Equipamento), 1, arq);
+						printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+					
+						system("pause");
+						system("cls");
+					break;
+					case 4:
+						// verifica se o codigo do treino existe.
+						do {	
+							printf("Informe o Código do Equipamento: ");
+							scanf("%d", &equipamentos.codigo);
+							validarCodigo(equipamentos.codigo);
+								
+						} while(equipamentos.codigo < 1 || equipamentos.codigo > 1000);
+							
+						pos = busca(arq, equipamentos.codigo, ENT_EQUIPAMENTO);
+						if(pos == -1) {
+							printf("[ERRO] Código não encontrado!\n\n");
+							
+							fclose(arq);
+							system("pause");
+							system("cls");
+							return;
+						} 
+						
+						// lê as informações especificas do respectivo treino.
+						fseek(arq, pos, SEEK_SET);
+						fread(&equipamentos, sizeof(Equipamento), 1, arq);
+						
+						printf("  Data da Última Manutenção: %d/%d/%d\n\n", equipamentos.dataUltimaManutencao.dia, equipamentos.dataUltimaManutencao.mes, equipamentos.dataUltimaManutencao.ano);
+				
+						printf("Informe a Nova Data de Manutenção (DD MM AAAA): ");
+						scanf("%d%d%d", &equipamentos.dataUltimaManutencao.dia, &equipamentos.dataUltimaManutencao.mes, &equipamentos.dataUltimaManutencao.ano);
+						
+						fseek(arq, pos, SEEK_SET);
+						fwrite(&equipamentos, sizeof(Equipamento), 1, arq);
+						printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+					
+						system("pause");
+						system("cls");
+					break;
+					case 5:
+						// verifica se o codigo do treino existe.
+						do {	
+							printf("Informe o Código do Equipamento: ");
+							scanf("%d", &equipamentos.codigo);
+							validarCodigo(equipamentos.codigo);
+								
+						} while(equipamentos.codigo < 1 || equipamentos.codigo > 1000);
+							
+						pos = busca(arq, equipamentos.codigo, ENT_EQUIPAMENTO);
+						if(pos == -1) {
+							printf("[ERRO] Código não encontrado!\n\n");
+							
+							fclose(arq);
+							system("pause");
+							system("cls");
+							return;
+						} 
+						
+						// lê as informações especificas do respectivo treino.
+						fseek(arq, pos, SEEK_SET);
+						fread(&equipamentos, sizeof(Equipamento), 1, arq);
+						
+						printf("\nSituação: ");
+						printf("\n  Opção: %d", equipamentos.situacao);
+				
+						printf("\n\nNova Situação: 1 = Bom | 2 = Manutenção | 3 = Inativo");
+						printf("\n  Opção: ");
+						scanf("%d", &equipamentos.situacao);
+						
+						fseek(arq, pos, SEEK_SET);
+						fwrite(&equipamentos, sizeof(Equipamento), 1, arq);
+						printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+					
+						system("pause");
+						system("cls");
+					break;
+					case 6:
+						// verifica se o codigo do treino existe.
+						do {	
+							printf("Informe o Código do Equipamento: ");
+							scanf("%d", &equipamentos.codigo);
+							validarCodigo(equipamentos.codigo);
+								
+						} while(equipamentos.codigo < 1 || equipamentos.codigo > 1000);
+							
+						pos = busca(arq, equipamentos.codigo, ENT_EQUIPAMENTO);
+						if(pos == -1) {
+							printf("[ERRO] Código não encontrado!\n\n");
+							
+							fclose(arq);
+							system("pause");
+							system("cls");
+							return;
+						} 
+						
+						// lê as informações especificas do respectivo treino.
+						fseek(arq, pos, SEEK_SET);
+						fread(&equipamentos, sizeof(Equipamento), 1, arq);
+						
+						printf("  Valor: %.2f\n\n", equipamentos.valor);
+				
+				        equipamentos.vTotal = equipamentos.valor * equipamentos.quantidade;
+				
+						printf("Informe o Novo Valor: ");
+						scanf("%f", &equipamentos.valor);
+						
+						fseek(arq, pos, SEEK_SET);
+						fwrite(&equipamentos, sizeof(Equipamento), 1, arq);
+						printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+					
+						system("pause");
+						system("cls");
+					break;
+					case 7:
+						// verifica se o codigo do treino existe.
+						do {	
+							printf("Informe o Código do Equipamento: ");
+							scanf("%d", &equipamentos.codigo);
+							validarCodigo(equipamentos.codigo);
+								
+						} while(equipamentos.codigo < 1 || equipamentos.codigo > 1000);
+							
+						pos = busca(arq, equipamentos.codigo, ENT_EQUIPAMENTO);
+						if(pos == -1) {
+							printf("[ERRO] Código não encontrado!\n\n");
+							
+							fclose(arq);
+							system("pause");
+							system("cls");
+							return;
+						} 
+						
+						// lê as informações especificas do respectivo treino.
+						fseek(arq, pos, SEEK_SET);
+						fread(&equipamentos, sizeof(Equipamento), 1, arq);
+						
+						printf("  Quantidade: %d\n\n", equipamentos.quantidade);
+				
+						printf("Informe a Nova Quantidade: ");
+						scanf("%d", &equipamentos.quantidade);
+						
+						equipamentos.vTotal = equipamentos.valor * equipamentos.quantidade;
+						
+						fseek(arq, pos, SEEK_SET);
+						fwrite(&equipamentos, sizeof(Equipamento), 1, arq);
+						printf("\n[SUCESSO] Alteração Realizada com Sucesso!\n");
+					
+						system("pause");
+						system("cls");
+					break;
+					default:
+						printf("\n Opção Inválida!");
+					break;
+				}
+				
+				fclose(arq);
+			}	
+		}
+	} while(opcao !=0);	
+}
+
+// Funções de Exclusão
+void excluirTreino() {
+	FILE *arq, *temp;
+	FILE *arqProfissional, *arqAlunos;
+	
+	int i, pos, codigo=0;
+	
+	system("cls");
+	printf("==============================================\n");
+	printf("  EXCLUIR - Treinos\n");
+	printf("==============================================\n\n");
+	
+	arq = fopen("treinos.bin", "rb");
+	if(arq == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+	} else {
+		// verifica se o codigo do treino existe.
+		do {	
+			printf("Informe o Código do Treino: ");
+			scanf("%d", &treinos.codigo);
+		    validarCodigo(treinos.codigo);
+						
+		} while(treinos.codigo < 1 || treinos.codigo > 1000);
+							
+		pos = busca(arq, treinos.codigo, ENT_TREINO);
+		if(pos == -1) {
+			printf("[ERRO] Código não encontrado!\n\n");
+							
+			fclose(arq);
+			system("pause");
+			system("cls");
+			return;
+		} 
+		
+		// lê as informações especificas do respectivo treino.
+		fseek(arq, pos, SEEK_SET);
+		fread(&treinos, sizeof(Treino), 1, arq);
+		
+		codigo = treinos.codigo;
+		
+		printf("\n==============================================\n");
+		printf("Código do Treino: %d\n\n", treinos.codigo);
+		
+		arqAlunos = fopen("alunos.bin", "rb");
+		printf("Código do Aluno: %d\n", treinos.codAluno);
+		if(arqAlunos == NULL) {
+			printf("Erro na Abertura do Arquivo!\n\n");
+		} else {
+			rewind(arqAlunos);
+			while(fread (&alunos, sizeof(Aluno), 1, arqAlunos) == 1) {
+				if(alunos.codigo == treinos.codAluno) {
+				    printf("  Nome do Aluno: %s\n\n", alunos.nome);
+				}
+			}
+		}
+		
+		arqProfissional = fopen("profissionais.bin", "rb");	
+		printf("Código do Profissional: %d\n", treinos.codProfissional);
+		if(arqProfissional == NULL) {
+			printf("Erro na Abertura do Arquivo!\n\n");
+		} else {
+			rewind(arqProfissional);
+			while(fread (&profissionais, sizeof(Profissional), 1, arqProfissional) == 1) {
+				if(profissionais.codigo == treinos.codProfissional) {
+					printf("  Nome do Profissional: %s\n\n", profissionais.nome);
+				}
+			}
+		}
+				
+		printf("Nome do Treino: %s", treinos.nome);
+		printf("Objetivo do Treino: %s\n", treinos.objetivo);
+				
+		printf("Exercícios:\n");
+		for(i=0; i<treinos.quantidade; i++) {
+			printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+		}
+					
+		printf("\nCriado em: %d/%d/%d\n", treinos.dataCriacao.dia, treinos.dataCriacao.mes, treinos.dataCriacao.ano);
+		printf("Ativo: ");
+		if(treinos.ativo == 1) {
+			printf("Sim\n");
+		} else {
+			printf("Não\n");
+		}
+		printf("==============================================\n");
+		
+		printf("\nDeseja Excluir o Treino? (S/N): ");
+		if(toupper(getche()) == 'S') {
+			temp = fopen("auxiliar.bin", "wb");
+			if(temp == NULL) {
+				printf("Erro na Abertura do Arquivo!\n\n");
+			} else {
+				rewind(arq);
+			
+				while(fread(&treinos, sizeof(Treino), 1, arq) == 1) {
+					if(treinos.codigo != codigo) {
+						fwrite(&treinos, sizeof(Treino), 1, temp);
+					}
+				}
+				fclose(arq);
+				fclose(temp);
+				if(arqAlunos != NULL) fclose(arqAlunos);
+				if(arqProfissional != NULL) fclose(arqProfissional);
+				remove("treinos.bin");
+				rename("auxiliar.bin", "treinos.bin");
+				printf("\n\n[SUCESSO]Treino Excluído com Sucesso!\n");
+			} 						
+		} else {
+			printf("\n\n[AVISO] Exclusão Cancelada!\n");
+				
+			if(arqAlunos != NULL) fclose(arqAlunos);
+			if(arqProfissional != NULL) fclose(arqProfissional);					
+			fclose(arq);
+			system("pause");
+			system("cls");
+			return;
+		}
+		system("pause");
+	}
+}
+
+void excluirEquipamento() {
+	FILE *arq, *temp;
+	Equipamento equipamentos;
+	
+	int pos, codigo;
+	
+	system("cls");
+	printf("==============================================\n");
+	printf("  EXCLUIR - Equipamentos\n");
+	printf("==============================================\n\n");
+	
+	arq = fopen("equipamentos.bin", "rb");
+	if(arq == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+	} else {
+		// verifica se o codigo do treino existe.
+		do {	
+			printf("Informe o Código do Equipamento: ");
+			scanf("%d", &equipamentos.codigo);
+		    validarCodigo(equipamentos.codigo);
+						
+		} while(equipamentos.codigo < 1 || equipamentos.codigo > 1000);
+							
+		pos = busca(arq, equipamentos.codigo, ENT_EQUIPAMENTO);
+		if(pos == -1) {
+			printf("[ERRO] Código não encontrado!\n\n");
+							
+			fclose(arq);
+			system("pause");
+			system("cls");
+			return;
+		} 
+		codigo = equipamentos.codigo;
+		
+		// lê as informações especificas do respectivo treino.
+		fseek(arq, pos, SEEK_SET);
+		fread(&equipamentos, sizeof(Equipamento), 1, arq);
+		
+		printf("\n==============================================\n");
+		printf("Código do Equipamento: %d\n\n", equipamentos.codigo);
+				
+		printf("Nome do Equipamento: %s", equipamentos.nome);
+		printf("Tipo do Equipamento: %s", equipamentos.tipo);
+		printf("Data de Aquisição: %d/%d/%d\n\n", equipamentos.dataAquisicao.dia, equipamentos.dataAquisicao.mes, equipamentos.dataAquisicao.ano);
+				
+		printf("Quantidade: %d\n", equipamentos.quantidade);
+		printf("Valor do Equipamento: %.2f\n\n", equipamentos.valor);
+				
+		printf("Situação: \n");
+		printf("  Opção: ");
+		if(equipamentos.situacao == 1) {
+			printf("Bom\n\n");
+		} else if(equipamentos.situacao == 2) {
+			printf("Manutenção\n\n");
+		} else if(equipamentos.situacao == 3) {
+			printf("Inativo\n\n");
+		}
+		
+		printf("Data da Última Manutenção: %d/%d/%d\n", equipamentos.dataUltimaManutencao.dia, equipamentos.dataUltimaManutencao.mes, equipamentos.dataUltimaManutencao.ano);
+				
+		printf("Ativo: ");
+		if(equipamentos.ativo == 1) {
+			printf("Sim\n");
+		} else {
+			printf("Não\n");
+		}
+		printf("\n==============================================\n");
+		
+		printf("\nDeseja Excluir o Equipamento? (S/N): ");
+		if(toupper(getche()) == 'S') {
+			temp = fopen("auxiliar.bin", "wb");
+			if(temp == NULL) {
+				printf("Erro na Abertura do Arquivo!\n\n");
+			} else {
+				rewind(arq);
+			
+				while(fread(&equipamentos, sizeof(Equipamento), 1, arq) == 1) {
+					if(equipamentos.codigo != codigo) {
+						fwrite(&equipamentos, sizeof(Equipamento), 1, temp);
+					}
+				}
+				fclose(arq);
+				fclose(temp);
+	
+				remove("equipamentos.bin");
+				rename("auxiliar.bin", "equipamentos.bin");
+				printf("\n\n[SUCESSO] Equipamento Excluído com Sucesso!\n");
+			} 						
+		} else {
+			printf("\n\n[AVISO] Exclusão Cancelada!\n");
+									
+			fclose(arq);
+			system("pause");
+			system("cls");
+			return;
+		}
+		system("pause");
+	}
+}
+
+// Funções de Listagem
+void listarTreinos() {
+	FILE *arq;
+	arq = fopen("treinos.bin", "rb");
+	
+	FILE *arqAluno;
+	arqAluno = fopen("alunos.bin", "rb");
+	
+	FILE *arqProfissional;
+	arqProfissional = fopen("profissionais.bin", "rb");
+	
+	int i;
+	system("cls");
+	printf("==============================================\n");
+	printf("  LISTAGEM - Treinos\n");
+	printf("==============================================\n");
+	
+	if(arq == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+	} else {
+		
+		fseek(arq, 0, SEEK_END);
+		if(ftell(arq) == 0) {
+		    printf("\n[ERRO] Nenhum Dado foi Encontrado!\n\n");
+			system("pause");
+			system("cls");
+			return;
+		} else {
+			
+			fseek(arq, 0, SEEK_SET); // Retorna ao inicio do arquivo
+			while(fread(&treinos, sizeof(Treino), 1, arq) == 1) {
+				printf("Código do Treino: %d\n\n", treinos.codigo);
+				printf("Código do Aluno: %d\n", treinos.codAluno);
+				
+				if(arqAluno == NULL) {
+					printf("Erro na Abertura do Arquivo!\n\n");
+				} else {
+					rewind(arqAluno);
+					while(fread (&alunos, sizeof(Aluno), 1, arqAluno) == 1) {
+						if(alunos.codigo == treinos.codAluno) {
+							printf("  Nome do Aluno: %s\n\n", alunos.nome);
+						}
+					}
+				}
+				
+				printf("Código do Profissional: %d\n", treinos.codProfissional);
+				
+				if(arqProfissional == NULL) {
+					printf("Erro na Abertura do Arquivo!\n\n");
+				} else {
+					rewind(arqProfissional);
+					while(fread (&profissionais, sizeof(Profissional), 1, arqProfissional) == 1) {
+						if(profissionais.codigo == treinos.codProfissional) {
+							printf("  Nome do Profissional: %s\n\n", profissionais.nome);
+						}
+					}
+				}
+				
+				printf("Nome do Treino: %s", treinos.nome);
+				printf("Objetivo do Treino: %s\n", treinos.objetivo);
+				
+				printf("Exercícios:\n");
+				for(i=0; i<treinos.quantidade; i++) {
+					printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+				}
+					
+				printf("\nCriado em: %d/%d/%d\n", treinos.dataCriacao.dia, treinos.dataCriacao.mes, treinos.dataCriacao.ano);
+	
+				printf("Ativo: ");
+				if(treinos.ativo == 1) {
+					printf("Sim\n");
+				} else {
+				    printf("Não\n");
+				}
+				printf("==============================================\n");
+			}
+	    }
+	}
+	
+	fclose(arq);
+	system("pause");
+}
+
+// Listar Equipamentos
+void listarEquipamentos() {
+	FILE *arq;
+	Equipamento equipamentos;
+	
+	int i, encontrados, opcao;
+	
+	system("cls");
+	arq = fopen("equipamentos.bin", "rb");
+	if(arq == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+	} else  {
+		fseek(arq, 0, SEEK_END);
+		if(ftell(arq) == 0) {
+		    printf("\n[ERRO] Nenhum Dado foi Encontrado!\n\n");
+			system("pause");
+			system("cls");
+			return;
+		} else {
+			do {
+			    system("cls");
+			    printf("==============================================\n");
+			    printf("  LISTAGEM - Equipamentos\n");
+			    printf("==============================================\n\n");
+			    printf("  [1]  Listar Equipamentos Bons\n");
+			    printf("  [2]  Listar Equipamentos em Manutenção\n");
+			    printf("  [3]  Listar Equipamentos Inativos\n");
+			    printf("  [4]  Listar Todos os Equipamentos\n");
+			    printf("  [0]  Voltar\n\n");
+			    printf("----------------------------------------------\n");
+			    printf("  Opção: ");
+			    scanf("%d", &opcao);
+			
+			    system("cls");
+			    switch (opcao) {
+			        case 1:
+			            encontrados = 0;
+			            fseek(arq, 0, SEEK_SET);
+			            while (fread(&equipamentos, sizeof(Equipamento), 1, arq) == 1) {
+			                if (equipamentos.situacao == 1) {
+			                    printf("Código do Equipamento: %d\n\n", equipamentos.codigo);
+			
+			                    printf("Nome do Equipamento: %s", equipamentos.nome);
+			                    printf("Tipo do Equipamento: %s", equipamentos.tipo);
+			                    printf("Data de Aquisição: %d/%d/%d\n\n", equipamentos.dataAquisicao.dia, equipamentos.dataAquisicao.mes, equipamentos.dataAquisicao.ano);
+			
+			                    printf("Quantidade: %d\n", equipamentos.quantidade);
+			                    printf("Valor do Equipamento: %.2f\n", equipamentos.valor);
+			                    printf("Valor Total dos Equipamentos: R$%.2f\n\n", equipamentos.vTotal);
+			
+			                    printf("Situação: Bom\n\n");
+			
+			                    printf("Data da Última Manutenção: %d/%d/%d\n", equipamentos.dataUltimaManutencao.dia, equipamentos.dataUltimaManutencao.mes, equipamentos.dataUltimaManutencao.ano);
+			
+			                    printf("Ativo: %s\n", equipamentos.ativo == 1 ? "Sim" : "Não");
+			                    printf("==============================================\n");
+			
+			                    encontrados++;
+			                }
+			            }
+			            if (encontrados == 0) {
+			                printf("[ERRO] Nenhum equipamento cadastrado.\n\n");
+			            }
+			            system("pause");
+			            break;
+			
+			        case 2:
+			            encontrados = 0;
+			            fseek(arq, 0, SEEK_SET);
+			            while (fread(&equipamentos, sizeof(Equipamento), 1, arq) == 1) {
+			                if (equipamentos.situacao == 2) {
+			                    printf("Código do Equipamento: %d\n\n", equipamentos.codigo);
+			
+			                    printf("Nome do Equipamento: %s", equipamentos.nome);
+			                    printf("Tipo do Equipamento: %s", equipamentos.tipo);
+			                    printf("Data de Aquisição: %d/%d/%d\n\n", equipamentos.dataAquisicao.dia, equipamentos.dataAquisicao.mes, equipamentos.dataAquisicao.ano);
+			
+			                    printf("Quantidade: %d\n", equipamentos.quantidade);
+			                    printf("Valor do Equipamento: %.2f\n", equipamentos.valor);
+			                    printf("Valor Total dos Equipamentos: R$%.2f\n\n", equipamentos.vTotal);
+			
+			                    printf("Situação: Manutenção\n\n");
+			
+			                    printf("Data da Última Manutenção: %d/%d/%d\n", equipamentos.dataUltimaManutencao.dia, equipamentos.dataUltimaManutencao.mes, equipamentos.dataUltimaManutencao.ano);
+			
+			                    printf("Ativo: %s\n", equipamentos.ativo == 1 ? "Sim" : "Não");
+			                    printf("==============================================\n");
+			
+			                    encontrados++;
+			                }
+			            }
+			            if (encontrados == 0) {
+			                printf("[ERRO] Nenhum equipamento cadastrado.\n\n");
+			            }
+			            system("pause");
+			            break;
+			
+			        case 3:
+			            encontrados = 0;
+			            fseek(arq, 0, SEEK_SET);
+			            while (fread(&equipamentos, sizeof(Equipamento), 1, arq) == 1) {
+			                if (equipamentos.situacao == 3) {
+			                    printf("Código do Equipamento: %d\n\n", equipamentos.codigo);
+			
+			                    printf("Nome do Equipamento: %s", equipamentos.nome);
+			                    printf("Tipo do Equipamento: %s", equipamentos.tipo);
+			                    printf("Data de Aquisição: %d/%d/%d\n\n", equipamentos.dataAquisicao.dia, equipamentos.dataAquisicao.mes, equipamentos.dataAquisicao.ano);
+			
+			                    printf("Quantidade: %d\n", equipamentos.quantidade);
+			                    printf("Valor do Equipamento: %.2f\n", equipamentos.valor);
+			                    printf("Valor Total dos Equipamentos: R$%.2f\n\n", equipamentos.vTotal);
+			
+			                    printf("Situação: Inativo\n\n");
+			
+			                    printf("Data da Última Manutenção: %d/%d/%d\n", equipamentos.dataUltimaManutencao.dia, equipamentos.dataUltimaManutencao.mes, equipamentos.dataUltimaManutencao.ano);
+			
+			                    printf("Ativo: %s\n", equipamentos.ativo == 1 ? "Sim" : "Não");
+			                    printf("==============================================\n");
+			
+			                    encontrados++;
+			                }
+			            }
+			            if (encontrados == 0) {
+			                printf("[ERRO] Nenhum equipamento cadastrado.\n\n");
+			            }
+			            system("pause");
+			            break;
+			
+			        case 4:
+			            encontrados = 0;
+			            fseek(arq, 0, SEEK_SET);
+			            while (fread(&equipamentos, sizeof(Equipamento), 1, arq) == 1) {
+			                printf("Código do Equipamento: %d\n\n", equipamentos.codigo);
+			
+			                printf("Nome do Equipamento: %s", equipamentos.nome);
+			                printf("Tipo do Equipamento: %s", equipamentos.tipo);
+			                printf("Data de Aquisição: %d/%d/%d\n\n", equipamentos.dataAquisicao.dia, equipamentos.dataAquisicao.mes, equipamentos.dataAquisicao.ano);
+			
+			                printf("Quantidade: %d\n", equipamentos.quantidade);
+			                printf("Valor do Equipamento: %.2f\n", equipamentos.valor);
+			                printf("Valor Total dos Equipamentos: R$%.2f\n\n", equipamentos.vTotal);
+			
+			                printf("Situação: ");
+			                if (equipamentos.situacao == 1) {
+			                    printf("Bom\n\n");
+			                } else if (equipamentos.situacao == 2) {
+			                    printf("Manutenção\n\n");
+			                } else if (equipamentos.situacao == 3) {
+			                    printf("Inativo\n\n");
+			                }
+			
+			                printf("Data da Última Manutenção: %d/%d/%d\n", equipamentos.dataUltimaManutencao.dia, equipamentos.dataUltimaManutencao.mes, equipamentos.dataUltimaManutencao.ano);
+			
+			                printf("Ativo: %s\n", equipamentos.ativo == 1 ? "Sim" : "Não");
+			                printf("==============================================\n");
+			
+			                encontrados++;
+			            }
+			            if (encontrados == 0) {
+			                printf("[ERRO] Nenhum equipamento cadastrado.\n\n");
+			            }
+			            system("pause");
+			            break;
+			
+			        case 0:
+			            break;
+			
+			        default:
+			            printf("Opção inválida!\n");
+			            system("pause");
+			    }
+			} while (opcao != 0);
+		}
+		fclose(arq);
+		system("pause");
+		system("cls");
+	}
+}
+
+// Cadastrar Treinos
+void cadastrarTreino() {
+	int i, quant, pos;
+	
+	FILE *arq, *arqAlunos, *arqProfissionais;
+	
+	system("cls");
+	arq = fopen("treinos.bin", "ab+");
+	if(arq == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+	} else {
+		
+		// verifica se o codigo do treino existe.
+		do {	
+			printf("Informe o Código do Treino: ");
+			scanf("%d", &treinos.codigo);
+		    validarCodigo(treinos.codigo);
+						
+		} while(treinos.codigo < 1 || treinos.codigo > 1000);
+							
+		pos = busca(arq, treinos.codigo, ENT_TREINO);
+		if(pos != -1) {}
+		
+		// Verifica se o aluno existe ou não
+		arqAlunos = fopen("alunos.bin", "rb");
+		if(arqAlunos == NULL) {}
+		
+		// Verifica se o profissional existe ou não
+		arqProfissionais = fopen("profissionais.bin", "rb");
+		if(arqProfissionais == NULL) {}
+		
+		fflush(stdin);
+		printf("Informe o Nome do Treino: ");
+		fgets(treinos.nome, 31, stdin);
+		
+		fflush(stdin);
+		printf("Informe o Objetivo do Treino: ");
+		fgets(treinos.objetivo, 61, stdin);
+		
+		do {
+			printf("\nInforme Quantos Exercícios Deseja Cadastrar: ");
+			scanf("%d", &treinos.quantidade);
+			getchar();
+			
+			if(treinos.quantidade>0 && treinos.quantidade <=10) {
+				for(i=0; i<treinos.quantidade; i++) {
+					printf("  %d) Exercício: ", i+1);
+				    fgets(treinos.exercicios[i], 41, stdin);
+				}
+			} else {
+				printf("[AVISO] A Quantidade Máxima de Exercícios por Treino é 10!!\n\n");
+			}
+		} while(treinos.quantidade<=0 || treinos.quantidade>10);
+		
+		printf("\nInforme a Data de Criação (DD MM AAAA): ");
+		scanf("%d%d%d", &treinos.dataCriacao.dia, &treinos.dataCriacao.mes, &treinos.dataCriacao.ano);
+		
+		treinos.ativo = 1;
+	
+		fwrite(&treinos, sizeof(Treino), 1, arq);
+		printf("\n[SUCESSO] Treino cadastrado!\n");
+		system("pause");
+		system("cls");
+		fclose(arq);
+	}
+}
+
+// Cadastrar Equipamentos
+void cadastrarEquipamento() {
+	FILE *arq;
+	Equipamento equipamentos;
+	
+	int pos;
+	
+	system("cls");
+	arq = fopen("equipamentos.bin", "ab+");
+	if(arq == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+	} else  {
+		// verifica se o codigo do treino existe.
+		do {	
+			printf("Informe o Código do Equipamento: ");
+			scanf("%d", &equipamentos.codigo);
+		    validarCodigo(equipamentos.codigo);
+						
+		} while(equipamentos.codigo < 1 || equipamentos.codigo > 1000);
+							
+		pos = busca(arq, equipamentos.codigo, ENT_EQUIPAMENTO);
+		if(pos != -1) {
+			printf("[ERRO] Código já cadastrado!\n\n");
+							
+			fclose(arq);
+			system("pause");
+			system("cls");
+			return;
+		}
+		
+		fflush(stdin);
+		printf("\nInforme o Nome do Equipamento: ");
+		fgets(equipamentos.nome, 61, stdin);
+		
+		fflush(stdin);
+		printf("Informe o Tipo do Equipamento: ");
+		fgets(equipamentos.tipo, 31, stdin);
+		
+		printf("Informe a Data de Aquisição (DD MM AAAA): ");
+		scanf("%d%d%d", &equipamentos.dataAquisicao.dia, &equipamentos.dataAquisicao.mes, &equipamentos.dataAquisicao.ano);
+		
+		do {
+			printf("\nInforme a Quantidade: ");
+		    scanf("%d", &equipamentos.quantidade);
+		    
+		    if(equipamentos.quantidade <= 0) {
+		    	printf("[ERRO] A Quantidade deve ser Superior à 0!\n\n");
+		    }
+		} while(equipamentos.quantidade <= 0);
+		
+		do {
+			printf("Informe o Valor do Equipamento: ");
+			scanf("%f", &equipamentos.valor);
+		    
+		    if(equipamentos.valor <= 0) {
+		    	printf("[ERRO] O valor deve ser Superior à 0!\n\n");
+		    }
+		} while(equipamentos.valor <= 0);
+		
+		printf("\nSituação: 1 = Bom | 2 = Manutenção | 3 = Inativo\n");
+		printf("  Opção: ");
+		scanf("%d", &equipamentos.situacao);
+		
+		printf("\nInforme da Última Manutenção (DD MM AAAA): ");
+		scanf("%d%d%d", &equipamentos.dataUltimaManutencao.dia, &equipamentos.dataUltimaManutencao.mes, &equipamentos.dataUltimaManutencao.ano);
+		
+		equipamentos.vTotal = equipamentos.valor * equipamentos.quantidade;
+		equipamentos.ativo = 1;
+		
+		fwrite(&equipamentos, sizeof(Equipamento), 1, arq);
+		printf("\n[SUCESSO] Equipamento cadastrado!\n");
+		system("pause");
+		system("cls");
+		fclose(arq);
+	}
+}
+
+// ===== FIM DO MENU TREINOS E EQUIPAMENTOS =====
+
 void altera(int codEntidade) {
 	int OpcoesAlteracao;
 
@@ -1888,7 +3304,7 @@ void altera(int codEntidade) {
 						alterarProfissional();
 						break;
 					case ENT_TREINO:
-						// alterarTreino();
+						alterarTreino();
 						break;
 					case ENT_PLANO:
 						alterarPlano();
@@ -1903,7 +3319,7 @@ void altera(int codEntidade) {
 						// alterarAgenda();
 						break;
 					case ENT_EQUIPAMENTO:
-						// alterarEquipamento();
+						alterarEquipamento();
 						break;
 					case ENT_PACOTE:
 						// alterarPacote();
@@ -1924,7 +3340,7 @@ void altera(int codEntidade) {
 						excluirProfissional();
 						break;
 					case ENT_TREINO:
-						// excluirTreino();
+						excluirTreino();
 						break;
 					case ENT_PLANO:
 						excluirPlano();
@@ -1939,7 +3355,7 @@ void altera(int codEntidade) {
 						// excluirAgenda();
 						break;
 					case ENT_EQUIPAMENTO:
-						// excluirEquipamento();
+						excluirEquipamento();
 						break;
 					case ENT_PACOTE:
 						// excluirPacote();
@@ -1960,7 +3376,7 @@ void altera(int codEntidade) {
 						listarProfissionais();
 						break;
 					case ENT_TREINO:
-						// listarTreinos();
+						listarTreinos();
 						break;
 					case ENT_PLANO:
 						listarPlanos();
@@ -1975,7 +3391,7 @@ void altera(int codEntidade) {
 						// listarAgenda();
 						break;
 					case ENT_EQUIPAMENTO:
-						// listarEquipamentos();
+						listarEquipamentos();
 						break;
 					case ENT_PACOTE:
 						// listarPacotes();
@@ -2142,6 +3558,8 @@ void altera(int codEntidade) {
 				fclose(arq);
 				break;
 			case 3:
+				//Treinos
+				cadastrarTreino();
 				break;
 			case 4:
 				//Planos
@@ -2228,6 +3646,8 @@ void altera(int codEntidade) {
 			case 7:
 				break;
 			case 8:
+				//Equipamentos
+				cadastrarEquipamento();
 				break;
 			case 9:
 				//Atividades
