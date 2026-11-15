@@ -240,6 +240,7 @@ void cadastrarEquipamento(void);
 void alterarEquipamento(void);
 void excluirEquipamento(void);
 void listarEquipamentos(void);
+void relatorioAlfabetico(void);
 
 // Função de Busca
 int busca(FILE *arq, int cod, int codEnt) {
@@ -2323,7 +2324,7 @@ void alterarTreino() {
 				
 						getchar();
 						printf("Informe o Novo Objetivo: ");
-						fgets(treinos.objetivo, 31, stdin);
+						fgets(treinos.objetivo, 61, stdin);
 						
 						fseek(arq, pos, SEEK_SET);
 						fwrite(&treinos, sizeof(Treino), 1, arq);
@@ -3127,34 +3128,54 @@ void listarEquipamentos() {
 
 // Cadastrar Treinos
 void cadastrarTreino() {
-	int i, quant, pos;
+	int i, quant, pos, ok;
 	
-	FILE *arq, *arqAlunos, *arqProfissionais;
+	FILE *arq;
 	
 	system("cls");
+	if(!temAlunoAtivo()) {
+		printf("\nNão Existem Alunos Ativos Cadastrados!\n\n");
+		system("pause");
+		return;
+	}
+	if(!temProfissionalAtivo()) {
+		printf("\nNão Existem Profissionais Ativos Cadastrados!\n\n");
+		system("pause");
+		return;
+	}
 	arq = fopen("treinos.bin", "ab+");
 	if(arq == NULL) {
 		printf("Erro na Abertura do Arquivo!\n\n");
 	} else {
 		
 		// verifica se o codigo do treino existe.
-		do {	
-			printf("Informe o Código do Treino: ");
-			scanf("%d", &treinos.codigo);
-		    validarCodigo(treinos.codigo);
-						
-		} while(treinos.codigo < 1 || treinos.codigo > 1000);
+		do {
+			do {	
+				printf("Informe o Código do Treino: ");
+				scanf("%d", &treinos.codigo);
+			    validarCodigo(treinos.codigo);
 							
-		pos = busca(arq, treinos.codigo, ENT_TREINO);
-		if(pos != -1) {}
+			} while(treinos.codigo < 1 || treinos.codigo > 1000);
+								
+			pos = busca(arq, treinos.codigo, ENT_TREINO);
+			if(pos != -1) printf("Código já Cadastrado!\n\n");
+		} while(pos != -1);
 		
 		// Verifica se o aluno existe ou não
-		arqAlunos = fopen("alunos.bin", "rb");
-		if(arqAlunos == NULL) {}
+		do {
+			printf("Informe o Código do Aluno: ");
+			scanf("%d", &treinos.codAluno);
+			ok = existeAlunoAvaliacao(treinos.codAluno);
+			if(!ok) printf("Aluno não Encontrado ou Inativo!\n\n");
+		} while(!ok);
 		
 		// Verifica se o profissional existe ou não
-		arqProfissionais = fopen("profissionais.bin", "rb");
-		if(arqProfissionais == NULL) {}
+		do {
+			printf("Informe o Código do Profissional: ");
+			scanf("%d", &treinos.codProfissional);
+			ok = existeProfissionalAvaliacao(treinos.codProfissional);
+			if(!ok) printf("Profissional não Encontrado ou Inativo!\n\n");
+		} while(!ok);
 		
 		fflush(stdin);
 		printf("Informe o Nome do Treino: ");
@@ -3179,8 +3200,11 @@ void cadastrarTreino() {
 			}
 		} while(treinos.quantidade<=0 || treinos.quantidade>10);
 		
-		printf("\nInforme a Data de Criação (DD MM AAAA): ");
-		scanf("%d%d%d", &treinos.dataCriacao.dia, &treinos.dataCriacao.mes, &treinos.dataCriacao.ano);
+		do {
+			printf("\nInforme a Data de Criação (DD MM AAAA): ");
+			scanf("%d%d%d", &treinos.dataCriacao.dia, &treinos.dataCriacao.mes, &treinos.dataCriacao.ano);
+			if(validaData(treinos.dataCriacao) == 0) printf("Insira Uma Data Valida!\n");
+		} while(validaData(treinos.dataCriacao) != 1);
 		
 		treinos.ativo = 1;
 	
@@ -3922,6 +3946,170 @@ void operacoes(void) {
 }
 
 //6 - FUNÇÃO DE RELATÓRIOS
+// ===== RELATÓRIO EM ORDEM ALFABÉTICA =====
+// Ordena uma CÓPIA do arquivo (ordenado.bin) com a lógica do professor
+// (troca de registros vizinhos usando fseek/fread/fwrite), assim o arquivo original não muda de ordem.
+typedef union {
+	Aluno        a;
+	Profissional p;
+	Treino       t;
+	Plano        pl;
+	Atividade    at;
+	Equipamento  e;
+} Registro;
+
+int tamanhoRegistro(int codEnt) {
+	switch(codEnt) {
+		case ENT_ALUNO:        return sizeof(Aluno);
+		case ENT_PROFISSIONAL: return sizeof(Profissional);
+		case ENT_TREINO:       return sizeof(Treino);
+		case ENT_PLANO:        return sizeof(Plano);
+		case ENT_ATIVIDADE:    return sizeof(Atividade);
+		case ENT_EQUIPAMENTO:  return sizeof(Equipamento);
+	}
+	return 0;
+}
+
+void nomeRegistro(Registro *r, int codEnt, char destino[]) {
+	switch(codEnt) {
+		case ENT_ALUNO:        strcpy(destino, r->a.nome);  break;
+		case ENT_PROFISSIONAL: strcpy(destino, r->p.nome);  break;
+		case ENT_TREINO:       strcpy(destino, r->t.nome);  break;
+		case ENT_PLANO:        strcpy(destino, r->pl.nome); break;
+		case ENT_ATIVIDADE:    strcpy(destino, r->at.nome); break;
+		case ENT_EQUIPAMENTO:  strcpy(destino, r->e.nome);  break;
+	}
+	if(strlen(destino) > 0 && destino[strlen(destino)-1] == '\n') destino[strlen(destino)-1] = '\0';
+}
+
+int codigoRegistro(Registro *r, int codEnt) {
+	switch(codEnt) {
+		case ENT_ALUNO:        return r->a.codigo;
+		case ENT_PROFISSIONAL: return r->p.codigo;
+		case ENT_TREINO:       return r->t.codigo;
+		case ENT_PLANO:        return r->pl.codigo;
+		case ENT_ATIVIDADE:    return r->at.codigo;
+		case ENT_EQUIPAMENTO:  return r->e.codigo;
+	}
+	return 0;
+}
+
+int ativoRegistro(Registro *r, int codEnt) {
+	switch(codEnt) {
+		case ENT_ALUNO:        return r->a.ativo;
+		case ENT_PROFISSIONAL: return r->p.ativo;
+		case ENT_TREINO:       return r->t.ativo;
+		case ENT_PLANO:        return r->pl.ativo;
+		case ENT_ATIVIDADE:    return r->at.ativo;
+		case ENT_EQUIPAMENTO:  return r->e.ativo;
+	}
+	return 0;
+}
+
+void relatorioAlfabetico(void) {
+	FILE *arq, *ordenado;
+	Registro reg, regi;
+	char nome1[61], nome2[61], arquivo[31], titulo[31];
+	int opcao, codEnt, tam, qtde, i, total;
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  RELATÓRIO - Ordem Alfabética\n");
+	printf("==============================================\n\n");
+	printf("  [1]  Alunos\n");
+	printf("  [2]  Profissionais\n");
+	printf("  [3]  Treinos\n");
+	printf("  [4]  Planos\n");
+	printf("  [5]  Atividades\n");
+	printf("  [6]  Equipamentos\n");
+	printf("  [0]  Voltar\n\n");
+	printf("----------------------------------------------\n");
+	printf("  Opção: ");
+	opcao = -1;
+	scanf("%d", &opcao);
+	fflush(stdin);
+
+	switch(opcao) {
+		case 1: codEnt = ENT_ALUNO;        strcpy(arquivo, "alunos.bin");        strcpy(titulo, "Alunos");        break;
+		case 2: codEnt = ENT_PROFISSIONAL; strcpy(arquivo, "profissionais.bin"); strcpy(titulo, "Profissionais"); break;
+		case 3: codEnt = ENT_TREINO;       strcpy(arquivo, "treinos.bin");       strcpy(titulo, "Treinos");       break;
+		case 4: codEnt = ENT_PLANO;        strcpy(arquivo, "planos.bin");        strcpy(titulo, "Planos");        break;
+		case 5: codEnt = ENT_ATIVIDADE;    strcpy(arquivo, "atividades.bin");    strcpy(titulo, "Atividades");    break;
+		case 6: codEnt = ENT_EQUIPAMENTO;  strcpy(arquivo, "equipamentos.bin");  strcpy(titulo, "Equipamentos");  break;
+		case 0: return;
+		default:
+			printf("\n Opção Inválida!\n");
+			system("pause");
+			return;
+	}
+
+	tam = tamanhoRegistro(codEnt);
+
+	arq = fopen(arquivo, "rb");
+	if(arq == NULL) {
+		printf("\nNenhum Registro Cadastrado!\n\n");
+		system("pause");
+		return;
+	}
+
+	// copia os registros para o arquivo auxiliar
+	ordenado = fopen("ordenado.bin", "wb");
+	if(ordenado == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+		fclose(arq);
+		system("pause");
+		return;
+	}
+	while(fread(&reg, tam, 1, arq) == 1) {
+		fwrite(&reg, tam, 1, ordenado);
+	}
+	fclose(arq);
+	fclose(ordenado);
+
+	// ordena o arquivo auxiliar (bubble sort direto no arquivo)
+	ordenado = fopen("ordenado.bin", "rb+");
+	if(ordenado == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+		system("pause");
+		return;
+	}
+	fseek(ordenado, 0, SEEK_END);
+	qtde = ftell(ordenado) / tam;
+	total = qtde;
+	while(qtde > 1) {
+		for(i = 0; i < qtde - 1; i++) {
+			fseek(ordenado, i * tam, SEEK_SET);
+			fread(&reg, tam, 1, ordenado);
+			fseek(ordenado, (i + 1) * tam, SEEK_SET);
+			fread(&regi, tam, 1, ordenado);
+			nomeRegistro(&reg, codEnt, nome1);
+			nomeRegistro(&regi, codEnt, nome2);
+			if(stricmp(nome1, nome2) > 0) {
+				fseek(ordenado, i * tam, SEEK_SET);
+				fwrite(&regi, tam, 1, ordenado);
+				fseek(ordenado, (i + 1) * tam, SEEK_SET);
+				fwrite(&reg, tam, 1, ordenado);
+			}
+		}
+		qtde--;
+	}
+
+	// exibe
+	system("cls");
+	printf("==============================================\n");
+	printf("  %s em Ordem Alfabética\n", titulo);
+	printf("==============================================\n\n");
+	rewind(ordenado);
+	while(fread(&reg, tam, 1, ordenado) == 1) {
+		nomeRegistro(&reg, codEnt, nome1);
+		printf("  Código: %-5d Nome: %-30s %s\n", codigoRegistro(&reg, codEnt), nome1, ativoRegistro(&reg, codEnt) == 1 ? "Ativo" : "Inativo");
+	}
+	printf("\n  Total: %d registro(s)\n\n", total);
+	fclose(ordenado);
+	remove("ordenado.bin");
+	system("pause");
+}
+
 void relatorios(void) {
 	int Opcoes;
 
@@ -3943,6 +4131,8 @@ void relatorios(void) {
 		printf("       Por ano e plano\n");
 		printf("  [6]  Frequência\n");
 		printf("       Por aluno, período e atividade\n");
+		printf("  [7]  Cadastros em ordem alfabética\n");
+		printf("       Alunos, profissionais, treinos, planos e mais\n");
 		printf("  [0]  Voltar ao menu principal\n");
 		printf("----------------------------------------------\n");
 		printf("  Opção: ");
@@ -3962,6 +4152,9 @@ void relatorios(void) {
 			case 5:
 				break;
 			case 6:
+				break;
+			case 7:
+				relatorioAlfabetico();
 				break;
 			case 0:
 				printf("\n Voltando...");
