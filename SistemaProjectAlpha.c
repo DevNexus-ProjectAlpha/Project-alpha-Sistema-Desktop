@@ -45,7 +45,7 @@ typedef struct {
 	char nome[61];
 	char cpf[16];
 	Data dataNascimento;
-	char telefone[16];
+	char telefone[17];
 	char email[61];
 	int  ativo;
 } Aluno;
@@ -654,6 +654,7 @@ void alterarAluno(void) {
 								tempPos = busca(arq, alunos.codigo, ENT_ALUNO);
 								if(tempPos != -1) printf("Matrícula Já Cadastrada!\n\n");
 							} while(tempPos != -1);
+							fseek(arq, pos, 0);
 							fwrite(&alunos, sizeof(Aluno), 1, arq);
 							printf("Alteração Realizada com Sucesso!\n");
 							break;
@@ -702,7 +703,7 @@ void alterarAluno(void) {
 								fgets(alunos.email, 61, stdin);
 								if(validaExcedeu(alunos.email) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
 								
-								if(validaEmail(alunos.email) == 0) printf("Email Deve conter um @ e um . depois Dele \nAntes do @ só pode Conter - ou _ \nDepois do @ Apenas .\n\n");
+								if(validaEmail(alunos.email) == 0) printf("Email Deve conter um @ e um . depois Dele \nAntes do @ só pode Conter Letras, Números, - ou . \nDepois do @ Apenas .\n\n");
 							} while(validaEmail(alunos.email) != 1);
 							fwrite(&alunos, sizeof(Aluno), 1, arq);
 							printf("Alteração Realizada com Sucesso!\n");
@@ -731,7 +732,7 @@ void alterarAluno(void) {
 
 void alterarProfissional(void) {
 	FILE *arq;
-	int OpcoesAlteracao, matricula, i, pos;
+	int OpcoesAlteracao, matricula, i, pos, tempPos;
 
 	do {
 		system("cls");
@@ -772,9 +773,10 @@ void alterarProfissional(void) {
 									if(profissionais.codigo < 1 || profissionais.codigo > 1000) printf("A Matrícula Deve Estar Entre 1 e 1000!\n\n");
 								} while(profissionais.codigo < 1 || profissionais.codigo > 1000);
 								
-								pos = busca(arq, profissionais.codigo, ENT_PROFISSIONAL);
-								if(pos != -1) printf("Matrícula Já Cadastrada!\n\n");
-							} while(pos != -1);
+								tempPos = busca(arq, profissionais.codigo, ENT_PROFISSIONAL);
+								if(tempPos != -1) printf("Matrícula Já Cadastrada!\n\n");
+							} while(tempPos != -1);
+							fseek(arq, pos, 0);
 							fwrite(&profissionais, sizeof(Profissional), 1, arq);
 							printf("\nAlteração Realizada com Sucesso!\n");
 							break;
@@ -3566,7 +3568,7 @@ void altera(int codEntidade) {
 						fgets(alunos.email, 61, stdin);
 						if(validaExcedeu(alunos.email) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
 						
-						if(validaEmail(alunos.email) == 0) printf("Email Deve conter um @ e um . depois Dele \nAntes do @ só pode Conter - ou _ \nDepois do @ Apenas .\n\n");
+						if(validaEmail(alunos.email) == 0) printf("Email Deve conter um @ e um . depois Dele \nAntes do @ só pode Conter Letras, Números, - ou . \nDepois do @ Apenas .\n\n");
 					} while(validaEmail(alunos.email) != 1);
 					
 					alunos.ativo = 1;
