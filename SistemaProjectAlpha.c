@@ -1175,6 +1175,81 @@ void listarProfissionais(void) {
 	system("pause");
 }
 
+// CONSULTAR ALUNO: pede a matrícula e mostra só o cadastro desse aluno.
+void consultarAluno(void) {
+	FILE *arq;
+	int cod, pos;
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  CONSULTA - Alunos\n");
+	printf("==============================================\n\n");
+
+	arq = fopen("alunos.bin", "rb");
+	if(arq == NULL) printf("Nenhum Aluno Cadastrado!\n\n");
+	else {
+		printf("Informe a Matrícula do Aluno: ");
+		scanf("%d", &cod);
+
+		pos = busca(arq, cod, ENT_ALUNO);
+		if(pos == -1) printf("\nAluno Não Encontrado!\n\n");
+		else {
+			fseek(arq, pos, 0);
+			fread(&alunos, sizeof(Aluno), 1, arq);
+			printf("\n==============================================\n");
+			printf("Matrícula: %d\n", alunos.codigo);
+			printf("Nome: %s\n", alunos.nome);
+			printf("CPF: %s\n", alunos.cpf);
+			printf("Data de Nascimento: %d/%d/%d\n", alunos.dataNascimento.dia, alunos.dataNascimento.mes, alunos.dataNascimento.ano);
+			printf("Telefone: %s\n", alunos.telefone);
+			printf("E-mail: %s\n", alunos.email);
+			printf("Ativo: ");
+			if(alunos.ativo == 1) printf("Sim\n");
+			else printf("Não\n");
+			printf("==============================================\n\n");
+		}
+		fclose(arq);
+	}
+	system("pause");
+}
+
+// CONSULTAR PROFISSIONAL: pede a matrícula e mostra só o cadastro desse profissional.
+void consultarProfissional(void) {
+	FILE *arq;
+	int cod, pos;
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  CONSULTA - Profissionais\n");
+	printf("==============================================\n\n");
+
+	arq = fopen("profissionais.bin", "rb");
+	if(arq == NULL) printf("Nenhum Profissional Cadastrado!\n\n");
+	else {
+		printf("Informe a Matrícula do Profissional: ");
+		scanf("%d", &cod);
+
+		pos = busca(arq, cod, ENT_PROFISSIONAL);
+		if(pos == -1) printf("\nProfissional Não Encontrado!\n\n");
+		else {
+			fseek(arq, pos, 0);
+			fread(&profissionais, sizeof(Profissional), 1, arq);
+			printf("\n==============================================\n");
+			printf("Matrícula: %d\n", profissionais.codigo);
+			printf("Nome: %s\n", profissionais.nome);
+			printf("CPF: %s\n", profissionais.cpf);
+			printf("Telefone: %s\n", profissionais.telefone);
+			printf("Função: %s\n", profissionais.funcao);
+			printf("Ativo: ");
+			if(profissionais.ativo == 1) printf("Sim\n");
+			else printf("Não\n");
+			printf("==============================================\n\n");
+		}
+		fclose(arq);
+	}
+	system("pause");
+}
+
 void listarAvaliacoes(void) {
 	FILE *arq;
 	int codigoAluno = 0, encontrou = 0, opc;
@@ -3354,6 +3429,10 @@ void altera(int codEntidade) {
 		printf("       Desativa um registro do sistema\n");
 		printf("  [3]  Relatório\n");
 		printf("       Lista os registros cadastrados\n");
+		if(codEntidade == ENT_ALUNO || codEntidade == ENT_PROFISSIONAL) {
+			printf("  [4]  Consultar\n");
+			printf("       Mostra o cadastro de uma matrícula\n");
+		}
 		printf("  [0]  Voltar ao submenu\n");
 		printf("----------------------------------------------\n");
 		printf("  Opção: ");
@@ -3467,6 +3546,16 @@ void altera(int codEntidade) {
 					case ENT_ATIVIDADE:
 						listarAtividades();
 						break;
+				}
+				break;
+
+			case 4:
+				// ============== CONSULTAR (só Alunos e Profissionais) ==============
+				if(codEntidade == ENT_ALUNO) consultarAluno();
+				else if(codEntidade == ENT_PROFISSIONAL) consultarProfissional();
+				else {
+					printf("\n Opção Inválida!\n");
+					getch();
 				}
 				break;
 
