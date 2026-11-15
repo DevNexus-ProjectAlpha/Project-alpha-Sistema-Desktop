@@ -226,8 +226,6 @@ void listarPlanos(void);
 int  buscarPlano(int codigo);
 int  existePlano(int codigo);
 int  planoTemMatricula(int codPlano);
-int  lerInteiroPlano(int *valor);
-int  lerValorPlano(float *valor);
 int  escolherTipoPlano(Plano *p);
 int  tipoPlanoRepetido(FILE *arq, char nome[], int codIgnorar);
 void mostrarPlano(Plano p);
@@ -1174,72 +1172,6 @@ void listarAvaliacoes(void) {
 }
 
 // ===================== INÍCIO DO MENU PLANOS (parte da Ana) =====================
-int lerInteiroPlano(int *valor) {
-	char texto[32];
-	int i = 0, digitos = 0, numero = 0, c;
-
-	if(fgets(texto, 32, stdin) == NULL) {
-		clearerr(stdin);
-		return 0;
-	}
-	if(strchr(texto, '\n') == NULL) {       // digitou mais do que cabe: joga fora o resto
-		while((c = getchar()) != '\n' && c != EOF);
-		return 0;
-	}
-	while(texto[i] == ' ') i++;             // ignora espaços antes
-	while(isdigit(texto[i])) {
-		numero = numero * 10 + (texto[i] - '0');
-		digitos++;
-		i++;
-		if(digitos > 6) return 0;           // número grande demais
-	}
-	while(texto[i] == ' ') i++;             // ignora espaços depois
-	if(digitos == 0 || texto[i] != '\n') return 0;
-
-	*valor = numero;
-	return 1;
-}
-
-// Lê um valor em reais (aceita 100, 100.50 ou 100,50). Não usa scanf nem strtod,
-// por isso funciona igual com o setlocale("Portuguese") do programa.
-// Devolve 1 se leu um valor válido (guardado em *valor) e 0 se não.
-int lerValorPlano(float *valor) {
-	char texto[32];
-	int i = 0, digitos = 0, temSeparador = 0, c;
-	double numero = 0, casa = 1;
-
-	if(fgets(texto, 32, stdin) == NULL) {
-		clearerr(stdin);
-		return 0;
-	}
-	if(strchr(texto, '\n') == NULL) {
-		while((c = getchar()) != '\n' && c != EOF);
-		return 0;
-	}
-	while(texto[i] == ' ') i++;
-	while(texto[i] != '\n') {
-		if(isdigit(texto[i])) {
-			if(temSeparador == 0) numero = numero * 10 + (texto[i] - '0');
-			else {
-				casa = casa / 10;
-				numero = numero + (texto[i] - '0') * casa;
-			}
-			digitos++;
-		} else if((texto[i] == '.' || texto[i] == ',') && temSeparador == 0) {
-			temSeparador = 1;
-		} else if(texto[i] == ' ') {
-			while(texto[i] == ' ') i++;      // só espaços até o Enter
-			if(texto[i] != '\n') return 0;
-			break;
-		} else return 0;                     // letra ou símbolo
-		i++;
-	}
-	if(digitos == 0) return 0;
-
-	*valor = (float)numero;
-	return 1;
-}
-
 // Mostra o menu de tipos e preenche nome, meses e desconto do plano recebido.
 // O desconto NÃO é digitado: sai do tipo (Mensal 0%, Trimestral 5%, Semestral 10%, Anual 15%).
 // Devolve 1 se escolheu um tipo válido e 0 se não.
@@ -1252,10 +1184,7 @@ int escolherTipoPlano(Plano *p) {
 	printf("  [3] Semestral   (6 meses, 10%% de desconto)\n");
 	printf("  [4] Anual       (12 meses, 15%% de desconto)\n");
 	printf("Escolha: ");
-	if(lerInteiroPlano(&opcao) == 0) {
-		printf("Digite apenas números!\n");
-		return 0;
-	}
+	scanf("%d", &opcao);
 
 	switch(opcao) {
 		case 1:
@@ -1379,7 +1308,7 @@ int planoTemMatricula(int codPlano) {
 // planos.bin com ativo = 1.
 void cadastrarPlano(void) {
 	FILE *arq;
-	int codigo, pos = -1;
+	int codigo, pos = -1, ok;
 
 	system("cls");
 	printf("==============================================\n");
@@ -1387,17 +1316,13 @@ void cadastrarPlano(void) {
 	printf("==============================================\n\n");
 
 	arq = fopen("planos.bin", "ab+");
-	if(arq == NULL) printf("Erro na Abertura do Arquivo!\n\n");
-	else {
-		fflush(stdin);
-		memset(&planos, 0, sizeof(Plano));     // limpa tudo: não grava lixo de memória
-
+	if(arq == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+	} else {
 		do {
 			printf("Informe o código do plano (1 a 1000): ");
-			if(lerInteiroPlano(&codigo) == 0) {
-				printf("Digite apenas números!\n\n");
-				codigo = 0;
-			} else if(codigo < 1 || codigo > 1000) {
+			scanf("%d", &codigo);
+			if(codigo < 1 || codigo > 1000) {
 				printf("O Código Deve Estar Entre 1 e 1000!\n\n");
 			} else {
 				pos = busca(arq, codigo, ENT_PLANO);
@@ -1406,31 +1331,28 @@ void cadastrarPlano(void) {
 		} while(codigo < 1 || codigo > 1000 || pos != -1);
 		planos.codigo = codigo;
 
-		while(escolherTipoPlano(&planos) == 0);   // pergunta de novo até escolher um tipo válido
+		do {
+			ok = escolherTipoPlano(&planos);
+		} while(ok == 0);
 
-		{
-			if(tipoPlanoRepetido(arq, planos.nome, 0) == 1) {
-				printf("\nEste tipo de plano já está cadastrado!\n");
-			} else {
-				do {
-					printf("\nInforme o valor mensal: R$ ");
-					if(lerValorPlano(&planos.valorMensal) == 0) {
-						printf("Digite apenas números (ex.: 100,50)!\n");
-						planos.valorMensal = 0;
-					} else if(planos.valorMensal <= 0 || planos.valorMensal > 100000) {
-						printf("O valor deve ser maior que zero e menor que 100000!\n");
-						planos.valorMensal = 0;
-					}
-				} while(planos.valorMensal <= 0);
+		if(tipoPlanoRepetido(arq, planos.nome, 0) == 1) {
+			printf("\nEste tipo de plano já está cadastrado!\n");
+		} else {
+			do {
+				printf("\nInforme o valor mensal: R$ ");
+				scanf("%f", &planos.valorMensal);
+				if(planos.valorMensal <= 0 || planos.valorMensal > 100000) {
+					printf("O valor deve ser maior que zero e menor que 100000!\n");
+				}
+			} while(planos.valorMensal <= 0 || planos.valorMensal > 100000);
 
-				planos.ativo = 1;
+			planos.ativo = 1;
 
-				fseek(arq, 0, SEEK_END);       // depois de ler, volta ao fim para gravar
-				fwrite(&planos, sizeof(Plano), 1, arq);
+			fseek(arq, 0, SEEK_END);       // depois de ler, volta ao fim para gravar
+			fwrite(&planos, sizeof(Plano), 1, arq);
 
-				printf("\nPlano cadastrado com sucesso!\n");
-				printf("Valor total: R$ %.2f\n", calcularValorPlano(planos));
-			}
+			printf("\nPlano cadastrado com sucesso!\n");
+			printf("Valor total: R$ %.2f\n", calcularValorPlano(planos));
 		}
 		fclose(arq);
 	}
@@ -1467,7 +1389,7 @@ void listarPlanos(void) {
 void alterarPlano(void) {
 	FILE *arq;
 	Plano novo;
-	int opcao, codigo, pos, gravar, valido;
+	int opcao, codigo, pos, gravar;
 
 	do {
 		system("cls");
@@ -1480,69 +1402,66 @@ void alterarPlano(void) {
 		printf("  [0]  Voltar\n\n");
 		printf("----------------------------------------------\n");
 		printf("  Opção: ");
-		fflush(stdin);
-		if(lerInteiroPlano(&opcao) == 0) opcao = -1;
+		opcao = -1;
+		scanf("%d", &opcao);
 
 		if(opcao != 0) {
-			if(opcao < 1 || opcao > 3) printf("\nOpção Inválida!\n\n");
-			else {
+			if(opcao < 1 || opcao > 3) {
+				printf("\nOpção Inválida!\n\n");
+			} else {
 				arq = fopen("planos.bin", "rb+");
-				if(arq == NULL) printf("\nNenhum plano cadastrado!\n\n");
-				else {
+				if(arq == NULL) {
+					printf("\nNenhum plano cadastrado!\n\n");
+				} else {
 					printf("\nInforme o código do plano: ");
-					if(lerInteiroPlano(&codigo) == 0) printf("Digite apenas números!\n\n");
-					else {
-						pos = busca(arq, codigo, ENT_PLANO);
-						if(pos != -1) {
-							fseek(arq, pos, SEEK_SET);
-							fread(&planos, sizeof(Plano), 1, arq);
-							gravar = 0;
+					scanf("%d", &codigo);
+					pos = busca(arq, codigo, ENT_PLANO);
+					if(pos == -1) {
+						printf("\nPlano Não Encontrado!\n\n");
+					} else {
+						fseek(arq, pos, SEEK_SET);
+						fread(&planos, sizeof(Plano), 1, arq);
+						gravar = 0;
 
-							switch(opcao) {
-								case 1:
-									novo = planos;
-									if(escolherTipoPlano(&novo) == 1) {
-										if(tipoPlanoRepetido(arq, novo.nome, planos.codigo) == 1) {
-											printf("\nEste tipo de plano já está cadastrado!\n");
-										} else {
-											strcpy(planos.nome, novo.nome);
-											planos.meses = novo.meses;
-											planos.porcentagemDesconto = novo.porcentagemDesconto;
-											gravar = 1;
-										}
+						switch(opcao) {
+							case 1:
+								novo = planos;
+								if(escolherTipoPlano(&novo) == 1) {
+									if(tipoPlanoRepetido(arq, novo.nome, planos.codigo) == 1) {
+										printf("\nEste tipo de plano já está cadastrado!\n");
+									} else {
+										strcpy(planos.nome, novo.nome);
+										planos.meses = novo.meses;
+										planos.porcentagemDesconto = novo.porcentagemDesconto;
+										gravar = 1;
 									}
-									break;
-								case 2:
-									do {
-										printf("Informe o Novo Valor Mensal: R$ ");
-										valido = lerValorPlano(&planos.valorMensal);
-										if(valido == 0) printf("Digite apenas números (ex.: 100,50)!\n\n");
-										else if(planos.valorMensal <= 0 || planos.valorMensal > 100000) {
-											printf("O valor deve ser maior que zero e menor que 100000!\n\n");
-											valido = 0;
-										}
-									} while(valido == 0);
-									gravar = 1;
-									break;
-								case 3:
-									do {
-										printf("Informe a Situação (1- Ativo / 0- Inativo): ");
-										valido = lerInteiroPlano(&planos.ativo);
-										if(valido == 0 || (planos.ativo != 1 && planos.ativo != 0)) {
-											printf("Informe Uma Situação Válida!\n\n");
-											valido = 0;
-										}
-									} while(valido == 0);
-									gravar = 1;
-									break;
-							}
+								}
+								break;
+							case 2:
+								do {
+									printf("Informe o Novo Valor Mensal: R$ ");
+									scanf("%f", &planos.valorMensal);
+									if(planos.valorMensal <= 0 || planos.valorMensal > 100000) {
+										printf("O valor deve ser maior que zero e menor que 100000!\n\n");
+									}
+								} while(planos.valorMensal <= 0 || planos.valorMensal > 100000);
+								gravar = 1;
+								break;
+							case 3:
+								do {
+									printf("Informe a Situação (1- Ativo / 0- Inativo): ");
+									scanf("%d", &planos.ativo);
+									if(planos.ativo != 1 && planos.ativo != 0) printf("Informe Uma Situação Válida!\n\n");
+								} while(planos.ativo != 1 && planos.ativo != 0);
+								gravar = 1;
+								break;
+						}
 
-							if(gravar == 1) {
-								fseek(arq, pos, SEEK_SET);     // volta para o início do registro
-								fwrite(&planos, sizeof(Plano), 1, arq);
-								printf("\nAlteração Realizada com Sucesso!\n");
-							}
-						} else printf("\nPlano Não Encontrado!\n\n");
+						if(gravar == 1) {
+							fseek(arq, pos, SEEK_SET);     // volta para o início do registro
+							fwrite(&planos, sizeof(Plano), 1, arq);
+							printf("\nAlteração Realizada com Sucesso!\n");
+						}
 					}
 					fclose(arq);
 				}
@@ -1566,43 +1485,48 @@ void excluirPlano(void) {
 	printf("==============================================\n\n");
 
 	arq = fopen("planos.bin", "rb");
-	if(arq == NULL) printf("Nenhum plano cadastrado!\n\n");
-	else {
-		fflush(stdin);
+	if(arq == NULL) {
+		printf("Nenhum plano cadastrado!\n\n");
+	} else {
 		printf("Informe o código do plano: ");
-		if(lerInteiroPlano(&codigo) == 0) printf("Digite apenas números!\n\n");
-		else {
-			pos = busca(arq, codigo, ENT_PLANO);
-			if(pos != -1) {
-				fseek(arq, pos, SEEK_SET);
-				fread(&planos, sizeof(Plano), 1, arq);
-				printf("==============================================\n");
-				mostrarPlano(planos);
+		scanf("%d", &codigo);
+		pos = busca(arq, codigo, ENT_PLANO);
+		if(pos == -1) {
+			printf("\nPlano Não Encontrado!\n");
+			fclose(arq);
+		} else {
+			fseek(arq, pos, SEEK_SET);
+			fread(&planos, sizeof(Plano), 1, arq);
+			printf("==============================================\n");
+			mostrarPlano(planos);
 
-				if(planoTemMatricula(codigo) == 1) {
-					printf("Não é possível excluir: existe matrícula com este plano!\n");
-				} else {
-					printf("Deseja excluir? S/N: ");
-					if(toupper(getche()) == 'S') {
-						temp = fopen("auxiliar.bin", "wb");
-						if(temp == NULL) printf("\nErro ao criar o arquivo auxiliar!\n");
-						else {
-							rewind(arq);
-							while(fread(&tempPlano, sizeof(Plano), 1, arq) == 1) {
-								if(tempPlano.codigo != codigo) fwrite(&tempPlano, sizeof(Plano), 1, temp);
-							}
-							fclose(temp);
-							fclose(arq);
-							arq = NULL;                    // já fechado: não fechar de novo
-							remove("planos.bin");
-							rename("auxiliar.bin", "planos.bin");
-							printf("\nO Plano Foi Excluído com Sucesso!\n");
+			if(planoTemMatricula(codigo) == 1) {
+				printf("Não é possível excluir: existe matrícula com este plano!\n");
+				fclose(arq);
+			} else {
+				printf("Deseja excluir? S/N: ");
+				if(toupper(getche()) == 'S') {
+					temp = fopen("auxiliar.bin", "wb");
+					if(temp == NULL) {
+						printf("\nErro ao criar o arquivo auxiliar!\n");
+						fclose(arq);
+					} else {
+						rewind(arq);
+						while(fread(&tempPlano, sizeof(Plano), 1, arq) == 1) {
+							if(tempPlano.codigo != codigo) fwrite(&tempPlano, sizeof(Plano), 1, temp);
 						}
-					} else printf("\nExclusão Cancelada!\n");
+						fclose(temp);
+						fclose(arq);
+						remove("planos.bin");
+						rename("auxiliar.bin", "planos.bin");
+						printf("\nO Plano Foi Excluído com Sucesso!\n");
+					}
+				} else {
+					printf("\nExclusão Cancelada!\n");
+					fclose(arq);
 				}
-			} else printf("\nPlano Não Encontrado!\n");
+			}
 		}
-		if(arq != NULL) fclose(arq);
 	}
 	system("pause");
 }
