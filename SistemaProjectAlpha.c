@@ -239,6 +239,24 @@ void alterarEquipamento(void);
 void excluirEquipamento(void);
 void listarEquipamentos(void);
 void relatorioAlfabetico(void);
+void efetuarMatricula(void);
+void efetuarRecebimento(void);
+void efetuarCancelamento(void);
+void listarMatriculas(void);
+void avisoMatricula(void);
+int  buscarPacote(int codigo);
+int  buscarMatricula(int codigo);
+int  alunoTemMatriculaAtiva(int codAluno);
+void gerarCobranca(int codMatricula, float valor, Data vencimento);
+int  proximoCodigo(char arquivo[], int tamanho);
+void fazerChamada(void);
+void listarFrequencia(void);
+void alterarFrequencia(void);
+void faturamentoMensal(void);
+void faturamentoPorPlano(void);
+void gastosMensais(void);
+void pagamentosPorAluno(void);
+void cadastrarGasto(void);
 
 // Função de Busca
 int busca(FILE *arq, int cod, int codEnt) {
@@ -251,6 +269,8 @@ int busca(FILE *arq, int cod, int codEnt) {
 	Plano tempPlano;
 	Treino tempTreino;
 	Equipamento tempEquipamento;
+	Matricula tempMatricula;
+	Pacote tempPacote;
 	
 	switch(codEnt) {
 		case ENT_ALUNO:
@@ -298,6 +318,18 @@ int busca(FILE *arq, int cod, int codEnt) {
 		case ENT_EQUIPAMENTO:
 			while(fread(&tempEquipamento, sizeof(Equipamento), 1, arq) == 1) {
 				if(tempEquipamento.codigo == cod) return (int)(ftell(arq) - sizeof(Equipamento));
+			}
+			return -1;
+			break;
+		case ENT_MATRICULA:
+			while(fread(&tempMatricula, sizeof(Matricula), 1, arq) == 1) {
+				if(tempMatricula.codigo == cod) return (int)(ftell(arq) - sizeof(Matricula));
+			}
+			return -1;
+			break;
+		case ENT_PACOTE:
+			while(fread(&tempPacote, sizeof(Pacote), 1, arq) == 1) {
+				if(tempPacote.codigo == cod) return (int)(ftell(arq) - sizeof(Pacote));
 			}
 			return -1;
 			break;
@@ -3270,7 +3302,7 @@ void altera(int codEntidade) {
 						alterarPlano();
 						break;
 					case ENT_MATRICULA:
-						// alterarMatricula();
+						avisoMatricula();
 						break;
 					case ENT_AVALIACAO:
 						alterarAvaliacao();
@@ -3306,7 +3338,7 @@ void altera(int codEntidade) {
 						excluirPlano();
 						break;
 					case ENT_MATRICULA:
-						// efetuarCancelamento();
+						efetuarCancelamento();
 						break;
 					case ENT_AVALIACAO:
 						excluirAvaliacao();
@@ -3342,7 +3374,7 @@ void altera(int codEntidade) {
 						listarPlanos();
 						break;
 					case ENT_MATRICULA:
-						// listarMatriculas();
+						listarMatriculas();
 						break;
 					case ENT_AVALIACAO:
 						listarAvaliacoes();
@@ -3767,10 +3799,13 @@ void frequencia(void) {
 
 		switch(Opcoes) {
 			case 1:
+				listarFrequencia();
 				break;
 			case 2:
+				fazerChamada();
 				break;
 			case 3:
+				alterarFrequencia();
 				break;
 			case 0:
 				printf("\n Voltando...");
@@ -3814,15 +3849,19 @@ void financeiro(void) {
 
 		switch(Opcoes) {
 			case 1:
+				faturamentoMensal();
 				break;
 			case 2:
+				faturamentoPorPlano();
 				break;
 			case 3:
+				gastosMensais();
 				break;
 			case 4:
+				pagamentosPorAluno();
 				break;
 			case 5:
-				//Cadastrar gastos
+				cadastrarGasto();
 				break;
 
 			case 0:
@@ -3863,10 +3902,13 @@ void operacoes(void) {
 
 		switch(Opcoes) {
 			case 1:
+				efetuarMatricula();
 				break;
 			case 2:
+				efetuarRecebimento();
 				break;
 			case 3:
+				efetuarCancelamento();
 				break;
 			case 0:
 				printf("\n Voltando...");
@@ -3879,6 +3921,1150 @@ void operacoes(void) {
 				break;
 		}
 	} while(Opcoes != 0);
+}
+
+// ===== OPERAÇÕES: MATRÍCULA, RECEBIMENTO E CANCELAMENTO (regras do ERS da Project Alpha) =====
+
+// Último dia do mês (considera ano bissexto).
+int ultimoDiaMes(int mes, int ano) {
+	switch(mes) {
+		case 4:
+		case 6:
+		case 9:
+		case 11:
+			return 30;
+		case 2:
+			if((ano % 4 == 0 && ano % 100 != 0) || ano % 400 == 0) return 29;
+			return 28;
+	}
+	return 31;
+}
+
+// Soma meses a uma data. Se o dia não existir no mês novo (ex.: 31/02), usa o último dia do mês.
+Data somarMeses(Data d, int meses) {
+	Data r;
+	int total;
+
+	total = (d.mes - 1) + meses;
+	r.ano = d.ano + total / 12;
+	r.mes = total % 12 + 1;
+	r.dia = d.dia;
+	if(r.dia > ultimoDiaMes(r.mes, r.ano)) r.dia = ultimoDiaMes(r.mes, r.ano);
+	return r;
+}
+
+// Transforma a data em número (AAAAMMDD) para poder comparar duas datas.
+int dataNumero(Data d) {
+	return d.ano * 10000 + d.mes * 100 + d.dia;
+}
+
+// Código automático: quantidade de registros do arquivo + 1 (usado onde o código não é digitado).
+int proximoCodigo(char arquivo[], int tamanho) {
+	FILE *arq;
+	int qtde = 0;
+
+	arq = fopen(arquivo, "rb");
+	if(arq != NULL) {
+		fseek(arq, 0, SEEK_END);
+		qtde = ftell(arq) / tamanho;
+		fclose(arq);
+	}
+	return qtde + 1;
+}
+
+// Procura o pacote pelo código. Se achar, deixa o registro na variável global pacotes
+// e devolve a posição em bytes. Se não achar (ou se o arquivo não existir), devolve -1.
+int buscarPacote(int codigo) {
+	FILE *arq;
+	int pos = -1;
+
+	arq = fopen("pacotes.bin", "rb");
+	if(arq != NULL) {
+		pos = busca(arq, codigo, ENT_PACOTE);
+		if(pos != -1) {
+			fseek(arq, pos, SEEK_SET);
+			fread(&pacotes, sizeof(Pacote), 1, arq);
+		}
+		fclose(arq);
+	}
+	return pos;
+}
+
+// Procura a matrícula pelo código. Se achar, deixa o registro na variável global matriculas
+// e devolve a posição em bytes. Se não achar (ou se o arquivo não existir), devolve -1.
+int buscarMatricula(int codigo) {
+	FILE *arq;
+	int pos = -1;
+
+	arq = fopen("matriculas.bin", "rb");
+	if(arq != NULL) {
+		pos = busca(arq, codigo, ENT_MATRICULA);
+		if(pos != -1) {
+			fseek(arq, pos, SEEK_SET);
+			fread(&matriculas, sizeof(Matricula), 1, arq);
+		}
+		fclose(arq);
+	}
+	return pos;
+}
+
+// Devolve 1 se o aluno já tem uma matrícula ativa (o ERS permite só uma por aluno).
+int alunoTemMatriculaAtiva(int codAluno) {
+	FILE *arq;
+	Matricula temp;
+	int achou = 0;
+
+	arq = fopen("matriculas.bin", "rb");
+	if(arq != NULL) {
+		while(achou == 0 && fread(&temp, sizeof(Matricula), 1, arq) == 1) {
+			if(temp.codAluno == codAluno && temp.situacao == 1) achou = 1;
+		}
+		fclose(arq);
+	}
+	return achou;
+}
+
+// Grava uma cobrança pendente no fim de cobrancas.bin (o código é automático).
+void gerarCobranca(int codMatricula, float valor, Data vencimento) {
+	FILE *arq;
+	Cobranca nova;
+
+	nova.codigo = proximoCodigo("cobrancas.bin", sizeof(Cobranca));
+	nova.codMatricula = codMatricula;
+	nova.mesRef = vencimento.mes;
+	nova.anoRef = vencimento.ano;
+	nova.valor = valor;
+	nova.vencimento = vencimento;
+	nova.dataPagamento.dia = 0;
+	nova.dataPagamento.mes = 0;
+	nova.dataPagamento.ano = 0;
+	nova.situacao = 1;
+
+	arq = fopen("cobrancas.bin", "ab+");
+	if(arq == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+	} else {
+		fwrite(&nova, sizeof(Cobranca), 1, arq);
+		fclose(arq);
+	}
+}
+
+// EFETUAR MATRÍCULA: vincula aluno, plano e pacote. O valor total é
+// (valor mensal do plano + acréscimo do pacote) x meses x (1 - desconto/100).
+// A data de término é a de início + meses do plano e a primeira cobrança sai na hora.
+void efetuarMatricula(void) {
+	FILE *arq;
+	Matricula nova;
+	int pos, ok;
+	float mensal, cheio, desconto, parcela;
+	char nomeA[61];
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  EFETUAR MATRÍCULA\n");
+	printf("==============================================\n\n");
+
+	if(!temAlunoAtivo()) {
+		printf("Não Existem Alunos Ativos Cadastrados!\n\n");
+		system("pause");
+		return;
+	}
+
+	arq = fopen("matriculas.bin", "ab+");
+	if(arq == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+		system("pause");
+		return;
+	}
+
+	do {
+		do {
+			printf("Informe o Código da Matrícula (1 a 1000): ");
+			scanf("%d", &nova.codigo);
+			if(nova.codigo < 1 || nova.codigo > 1000) printf("O Código Deve Estar Entre 1 e 1000!\n\n");
+		} while(nova.codigo < 1 || nova.codigo > 1000);
+
+		pos = busca(arq, nova.codigo, ENT_MATRICULA);
+		if(pos != -1) printf("Código Já Cadastrado!\n\n");
+	} while(pos != -1);
+
+	// aluno: precisa existir, estar ativo e não ter outra matrícula ativa
+	do {
+		printf("Informe o Código do Aluno (0 para cancelar): ");
+		scanf("%d", &nova.codAluno);
+		if(nova.codAluno == 0) {
+			fclose(arq);
+			return;
+		}
+		ok = existeAlunoAvaliacao(nova.codAluno);
+		if(!ok) printf("Aluno Não Encontrado ou Inativo!\n\n");
+		else if(alunoTemMatriculaAtiva(nova.codAluno)) {
+			printf("Este Aluno Já Possui Matrícula Ativa!\n\n");
+			ok = 0;
+		}
+	} while(!ok);
+
+	// plano: precisa existir e estar ativo (fica preenchido em planos)
+	do {
+		printf("Informe o Código do Plano (0 para cancelar): ");
+		scanf("%d", &nova.codPlano);
+		if(nova.codPlano == 0) {
+			fclose(arq);
+			return;
+		}
+		pos = buscarPlano(nova.codPlano);
+		ok = 1;
+		if(pos == -1) {
+			printf("Plano Não Encontrado!\n\n");
+			ok = 0;
+		} else if(planos.ativo != 1) {
+			printf("Plano Inativo!\n\n");
+			ok = 0;
+		}
+	} while(!ok);
+
+	// pacote: precisa existir e estar ativo (fica preenchido em pacotes)
+	do {
+		printf("Informe o Código do Pacote (0 para cancelar): ");
+		scanf("%d", &nova.codPacote);
+		if(nova.codPacote == 0) {
+			fclose(arq);
+			return;
+		}
+		pos = buscarPacote(nova.codPacote);
+		ok = 1;
+		if(pos == -1) {
+			printf("Pacote Não Encontrado!\n\n");
+			ok = 0;
+		} else if(pacotes.ativo != 1) {
+			printf("Pacote Inativo!\n\n");
+			ok = 0;
+		}
+	} while(!ok);
+
+	do {
+		printf("Informe a Data de Início (DD MM AAAA): ");
+		scanf("%d%d%d", &nova.dataInicio.dia, &nova.dataInicio.mes, &nova.dataInicio.ano);
+		if(validaData(nova.dataInicio) == 0) printf("Insira Uma Data Valida!\n\n");
+	} while(validaData(nova.dataInicio) != 1);
+
+	nova.dataTermino = somarMeses(nova.dataInicio, planos.meses);
+
+	mensal = planos.valorMensal + pacotes.valor;
+	cheio = mensal * planos.meses;
+	desconto = cheio * planos.porcentagemDesconto / 100;
+	nova.valorTotal = cheio - desconto;
+	parcela = nova.valorTotal / planos.meses;
+	nova.situacao = 1;
+
+	nomeDoAluno(nova.codAluno, nomeA);
+	printf("\n==============================================\n");
+	printf("Aluno: %d - %s\n", nova.codAluno, nomeA);
+	printf("Plano: %s (%d mês(es))\n", planos.nome, planos.meses);
+	printf("Pacote: %s\n", pacotes.nome);
+	printf("Valor mensal do plano: R$ %.2f\n", planos.valorMensal);
+	printf("Acréscimo do pacote: R$ %.2f\n", pacotes.valor);
+	printf("Valor sem desconto: R$ %.2f\n", cheio);
+	printf("Desconto: %.0f%% (- R$ %.2f)\n", planos.porcentagemDesconto, desconto);
+	printf("Valor total: R$ %.2f\n", nova.valorTotal);
+	printf("Valor de cada mensalidade: R$ %.2f\n", parcela);
+	printf("Início: %02d/%02d/%d\n", nova.dataInicio.dia, nova.dataInicio.mes, nova.dataInicio.ano);
+	printf("Término: %02d/%02d/%d\n", nova.dataTermino.dia, nova.dataTermino.mes, nova.dataTermino.ano);
+	printf("==============================================\n");
+	printf("Confirma a matrícula? S/N: ");
+	if(toupper(getche()) == 'S') {
+		fseek(arq, 0, SEEK_END);
+		fwrite(&nova, sizeof(Matricula), 1, arq);
+		fclose(arq);
+		gerarCobranca(nova.codigo, parcela, nova.dataInicio);
+		printf("\n\nMatrícula efetuada com sucesso!\n");
+		printf("A primeira cobrança foi gerada (vencimento em %02d/%02d/%d).\n", nova.dataInicio.dia, nova.dataInicio.mes, nova.dataInicio.ano);
+	} else {
+		fclose(arq);
+		printf("\n\nMatrícula cancelada!\n");
+	}
+	system("pause");
+}
+
+// LISTAR MATRÍCULAS (usada no Gerenciar > Matrículas > Relatório).
+void listarMatriculas(void) {
+	FILE *arq;
+	Matricula m;
+	char nomeA[61];
+	int total = 0;
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  LISTAGEM - Matrículas\n");
+	printf("==============================================\n");
+
+	arq = fopen("matriculas.bin", "rb");
+	if(arq == NULL) {
+		printf("Nenhuma matrícula cadastrada!\n\n");
+	} else {
+		while(fread(&m, sizeof(Matricula), 1, arq) == 1) {
+			if(!nomeDoAluno(m.codAluno, nomeA)) strcpy(nomeA, "(não encontrado)");
+			printf("Código da Matrícula: %d\n", m.codigo);
+			printf("Aluno: %d - %s\n", m.codAluno, nomeA);
+			if(buscarPlano(m.codPlano) != -1) printf("Plano: %s\n", planos.nome);
+			else printf("Plano: %d\n", m.codPlano);
+			if(buscarPacote(m.codPacote) != -1) printf("Pacote: %s\n", pacotes.nome);
+			else printf("Pacote: %d\n", m.codPacote);
+			printf("Início: %02d/%02d/%d\n", m.dataInicio.dia, m.dataInicio.mes, m.dataInicio.ano);
+			printf("Término: %02d/%02d/%d\n", m.dataTermino.dia, m.dataTermino.mes, m.dataTermino.ano);
+			printf("Valor total: R$ %.2f\n", m.valorTotal);
+			printf("Situação: ");
+			if(m.situacao == 1) printf("Ativa\n");
+			else printf("Cancelada\n");
+			printf("==============================================\n");
+			total++;
+		}
+		fclose(arq);
+		if(total == 0) printf("Nenhuma matrícula cadastrada!\n\n");
+		else printf("Total de matrículas: %d\n", total);
+	}
+	system("pause");
+}
+
+// Matrícula não é alterada: valor e cobranças já foram lançados. Para encerrar use o Cancelamento.
+void avisoMatricula(void) {
+	system("cls");
+	printf("==============================================\n");
+	printf("  Matrículas\n");
+	printf("==============================================\n\n");
+	printf("A matrícula não pode ser alterada, porque guarda\n");
+	printf("valores e cobranças já lançados.\n\n");
+	printf("Para encerrar o vínculo use a opção Excluir deste\n");
+	printf("menu ou Operações > Efetuar cancelamento.\n\n");
+	system("pause");
+}
+
+// EFETUAR RECEBIMENTO: dá baixa na cobrança pendente da matrícula, grava a data do pagamento
+// e gera a cobrança do mês seguinte (se a matrícula está ativa e o término ainda não chegou).
+void efetuarRecebimento(void) {
+	FILE *arq;
+	Matricula m;
+	Cobranca c;
+	Data dataPag, proximo;
+	int codigo, posMat, posCob, achou, n;
+	char nomeA[61];
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  EFETUAR RECEBIMENTO\n");
+	printf("==============================================\n\n");
+
+	printf("Informe o Código da Matrícula: ");
+	scanf("%d", &codigo);
+	posMat = buscarMatricula(codigo);
+	if(posMat == -1) {
+		printf("\nMatrícula Não Encontrada!\n\n");
+		system("pause");
+		return;
+	}
+	m = matriculas;
+	if(m.situacao != 1) {
+		printf("\nMatrícula Cancelada! Não é possível receber.\n\n");
+		system("pause");
+		return;
+	}
+
+	arq = fopen("cobrancas.bin", "rb+");
+	if(arq == NULL) {
+		printf("\nNenhuma cobrança cadastrada!\n\n");
+		system("pause");
+		return;
+	}
+
+	achou = 0;
+	while(achou == 0 && fread(&c, sizeof(Cobranca), 1, arq) == 1) {
+		if(c.codMatricula == codigo && c.situacao == 1) achou = 1;
+	}
+	if(achou == 0) {
+		printf("\nNão há cobrança pendente para esta matrícula!\n\n");
+		fclose(arq);
+		system("pause");
+		return;
+	}
+	posCob = ftell(arq) - sizeof(Cobranca);
+
+	if(!nomeDoAluno(m.codAluno, nomeA)) strcpy(nomeA, "(não encontrado)");
+	printf("\n==============================================\n");
+	printf("Matrícula: %d\n", m.codigo);
+	printf("Aluno: %d - %s\n", m.codAluno, nomeA);
+	printf("Cobrança: %d\n", c.codigo);
+	printf("Referência: %02d/%d\n", c.mesRef, c.anoRef);
+	printf("Vencimento: %02d/%02d/%d\n", c.vencimento.dia, c.vencimento.mes, c.vencimento.ano);
+	printf("Valor: R$ %.2f\n", c.valor);
+	printf("==============================================\n");
+	printf("Confirma o recebimento? S/N: ");
+	if(toupper(getche()) != 'S') {
+		printf("\n\nRecebimento cancelado!\n");
+		fclose(arq);
+		system("pause");
+		return;
+	}
+
+	printf("\n\n");
+	do {
+		printf("Informe a Data do Pagamento (DD MM AAAA): ");
+		scanf("%d%d%d", &dataPag.dia, &dataPag.mes, &dataPag.ano);
+		if(validaData(dataPag) == 0) printf("Insira Uma Data Valida!\n\n");
+	} while(validaData(dataPag) != 1);
+
+	c.situacao = 2;
+	c.dataPagamento = dataPag;
+	fseek(arq, posCob, SEEK_SET);
+	fwrite(&c, sizeof(Cobranca), 1, arq);
+	fclose(arq);
+	printf("\nRecebimento registrado com sucesso!\n");
+
+	// próxima cobrança: mês seguinte ao da cobrança paga (dezembro vira janeiro do outro ano)
+	n = (c.anoRef - m.dataInicio.ano) * 12 + (c.mesRef - m.dataInicio.mes) + 1;
+	proximo = somarMeses(m.dataInicio, n);
+	if(dataNumero(proximo) < dataNumero(m.dataTermino)) {
+		gerarCobranca(m.codigo, c.valor, proximo);
+		printf("Cobrança de %02d/%d gerada (vencimento em %02d/%02d/%d).\n", proximo.mes, proximo.ano, proximo.dia, proximo.mes, proximo.ano);
+	} else {
+		printf("Esta era a última mensalidade do plano. Nenhuma nova cobrança foi gerada.\n");
+	}
+	system("pause");
+}
+
+// EFETUAR CANCELAMENTO: plano mensal só suspende a próxima cobrança, sem devolução.
+// Trimestral, semestral e anual: retém 30% do valor pago e devolve 70%.
+// A matrícula vira cancelada e as cobranças pendentes viram canceladas.
+void efetuarCancelamento(void) {
+	FILE *arq;
+	Matricula m;
+	Cobranca c;
+	Cancelamento canc;
+	int codigo, posMat;
+	long pos;
+	float pago = 0;
+	char nomeA[61];
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  EFETUAR CANCELAMENTO\n");
+	printf("==============================================\n\n");
+
+	printf("Informe o Código da Matrícula: ");
+	scanf("%d", &codigo);
+	posMat = buscarMatricula(codigo);
+	if(posMat == -1) {
+		printf("\nMatrícula Não Encontrada!\n\n");
+		system("pause");
+		return;
+	}
+	m = matriculas;
+	if(m.situacao != 1) {
+		printf("\nEsta Matrícula Já Está Cancelada!\n\n");
+		system("pause");
+		return;
+	}
+	if(buscarPlano(m.codPlano) == -1) {
+		printf("\nPlano da Matrícula Não Encontrado!\n\n");
+		system("pause");
+		return;
+	}
+
+	// soma o que o aluno já pagou
+	arq = fopen("cobrancas.bin", "rb");
+	if(arq != NULL) {
+		while(fread(&c, sizeof(Cobranca), 1, arq) == 1) {
+			if(c.codMatricula == codigo && c.situacao == 2) pago = pago + c.valor;
+		}
+		fclose(arq);
+	}
+
+	canc.codMatricula = codigo;
+	canc.valorPago = pago;
+	if(planos.meses == 1) {
+		canc.valorDevolvido = 0;
+		canc.valorRetido = 0;
+	} else {
+		canc.valorRetido = pago * 0.30;
+		canc.valorDevolvido = pago * 0.70;
+	}
+
+	if(!nomeDoAluno(m.codAluno, nomeA)) strcpy(nomeA, "(não encontrado)");
+	printf("\n==============================================\n");
+	printf("Matrícula: %d\n", m.codigo);
+	printf("Aluno: %d - %s\n", m.codAluno, nomeA);
+	printf("Plano: %s\n", planos.nome);
+	printf("Valor pago até agora: R$ %.2f\n", canc.valorPago);
+	if(planos.meses == 1) {
+		printf("Plano mensal: sem devolução, só suspende a próxima cobrança.\n");
+	} else {
+		printf("Valor retido (30%%): R$ %.2f\n", canc.valorRetido);
+		printf("Valor devolvido (70%%): R$ %.2f\n", canc.valorDevolvido);
+	}
+	printf("==============================================\n");
+	printf("Confirma o cancelamento? S/N: ");
+	if(toupper(getche()) != 'S') {
+		printf("\n\nCancelamento desfeito!\n");
+		system("pause");
+		return;
+	}
+
+	printf("\n\n");
+	do {
+		printf("Informe a Data do Cancelamento (DD MM AAAA): ");
+		scanf("%d%d%d", &canc.data.dia, &canc.data.mes, &canc.data.ano);
+		if(validaData(canc.data) == 0) printf("Insira Uma Data Valida!\n\n");
+	} while(validaData(canc.data) != 1);
+
+	// grava o cancelamento
+	canc.codigo = proximoCodigo("cancelamentos.bin", sizeof(Cancelamento));
+	arq = fopen("cancelamentos.bin", "ab+");
+	if(arq == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+		system("pause");
+		return;
+	}
+	fwrite(&canc, sizeof(Cancelamento), 1, arq);
+	fclose(arq);
+
+	// matrícula passa a cancelada (regrava na mesma posição)
+	arq = fopen("matriculas.bin", "rb+");
+	if(arq != NULL) {
+		m.situacao = 2;
+		fseek(arq, posMat, SEEK_SET);
+		fwrite(&m, sizeof(Matricula), 1, arq);
+		fclose(arq);
+	}
+
+	// cobranças pendentes passam a canceladas
+	arq = fopen("cobrancas.bin", "rb+");
+	if(arq != NULL) {
+		pos = ftell(arq);
+		while(fread(&c, sizeof(Cobranca), 1, arq) == 1) {
+			if(c.codMatricula == codigo && c.situacao == 1) {
+				c.situacao = 3;
+				fseek(arq, pos, SEEK_SET);
+				fwrite(&c, sizeof(Cobranca), 1, arq);
+				fseek(arq, pos + sizeof(Cobranca), SEEK_SET);
+			}
+			pos = ftell(arq);
+		}
+		fclose(arq);
+	}
+
+	printf("\nCancelamento efetuado com sucesso!\n");
+	system("pause");
+}
+
+// ===== FREQUÊNCIA =====
+
+// Copia o nome da atividade para destino. Devolve 1 se achou e 0 se não achou.
+int nomeDaAtividade(int codigo, char destino[]) {
+	FILE *arq;
+	Atividade temp;
+	int pos, achou = 0;
+
+	arq = fopen("atividades.bin", "rb");
+	if(arq == NULL) return 0;
+
+	pos = busca(arq, codigo, ENT_ATIVIDADE);
+	if(pos != -1) {
+		fseek(arq, pos, SEEK_SET);
+		fread(&temp, sizeof(Atividade), 1, arq);
+		strcpy(destino, temp.nome);
+		achou = 1;
+	}
+	fclose(arq);
+	return achou;
+}
+
+// Devolve 1 se o aluno tem matrícula ativa e a atividade faz parte do pacote dessa matrícula.
+int alunoTemAtividade(int codAluno, int codAtividade) {
+	FILE *arq;
+	Matricula temp;
+	int i, achou = 0;
+
+	arq = fopen("matriculas.bin", "rb");
+	if(arq != NULL) {
+		while(achou == 0 && fread(&temp, sizeof(Matricula), 1, arq) == 1) {
+			if(temp.codAluno == codAluno && temp.situacao == 1) {
+				if(buscarPacote(temp.codPacote) != -1) {
+					for(i = 0; i < pacotes.qtdAtivPacote; i++) {
+						if(pacotes.codAtividades[i] == codAtividade) achou = 1;
+					}
+				}
+			}
+		}
+		fclose(arq);
+	}
+	return achou;
+}
+
+// Devolve 1 se o aluno já tem presença lançada nessa atividade nesse dia.
+int presencaJaRegistrada(int codAluno, int codAtividade, Data data) {
+	FILE *arq;
+	Presenca temp;
+	int achou = 0;
+
+	arq = fopen("presencas.bin", "rb");
+	if(arq != NULL) {
+		while(achou == 0 && fread(&temp, sizeof(Presenca), 1, arq) == 1) {
+			if(temp.codAluno == codAluno && temp.codAtividade == codAtividade && dataNumero(temp.data) == dataNumero(data)) achou = 1;
+		}
+		fclose(arq);
+	}
+	return achou;
+}
+
+// Conta os alunos presentes na atividade nesse dia (para respeitar a capacidade máxima).
+int contarPresentes(int codAtividade, Data data) {
+	FILE *arq;
+	Presenca temp;
+	int total = 0;
+
+	arq = fopen("presencas.bin", "rb");
+	if(arq != NULL) {
+		while(fread(&temp, sizeof(Presenca), 1, arq) == 1) {
+			if(temp.codAtividade == codAtividade && dataNumero(temp.data) == dataNumero(data) && temp.presente == 1) total++;
+		}
+		fclose(arq);
+	}
+	return total;
+}
+
+// FAZER CHAMADA: escolhe a atividade e o dia e lança a presença aluno por aluno.
+// Só entra aluno com matrícula ativa cujo pacote tem a atividade. Respeita a capacidade da atividade.
+void fazerChamada(void) {
+	FILE *arq;
+	Atividade ativ;
+	Presenca nova;
+	Data data;
+	int codAtividade, codAluno, presente, pos;
+	char nomeA[61];
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  FAZER CHAMADA\n");
+	printf("==============================================\n\n");
+
+	do {
+		printf("Informe o Código da Atividade (0 para cancelar): ");
+		scanf("%d", &codAtividade);
+		if(codAtividade == 0) return;
+		if(!existeAtividade(codAtividade)) printf("Atividade Não Encontrada ou Inativa!\n\n");
+	} while(!existeAtividade(codAtividade));
+
+	arq = fopen("atividades.bin", "rb");
+	pos = busca(arq, codAtividade, ENT_ATIVIDADE);
+	fseek(arq, pos, SEEK_SET);
+	fread(&ativ, sizeof(Atividade), 1, arq);
+	fclose(arq);
+
+	do {
+		printf("Informe a Data da Aula (DD MM AAAA): ");
+		scanf("%d%d%d", &data.dia, &data.mes, &data.ano);
+		if(validaData(data) == 0) printf("Insira Uma Data Valida!\n\n");
+	} while(validaData(data) != 1);
+
+	printf("\nAtividade: %s (capacidade: %d alunos)\n", ativ.nome, ativ.capacidade);
+
+	do {
+		printf("\nInforme o Código do Aluno (0 para encerrar a chamada): ");
+		scanf("%d", &codAluno);
+		if(codAluno != 0) {
+			if(!existeAlunoAvaliacao(codAluno)) {
+				printf("Aluno Não Encontrado ou Inativo!\n");
+			} else if(!alunoTemAtividade(codAluno, codAtividade)) {
+				printf("Aluno Sem Matrícula Ativa com Esta Atividade no Pacote!\n");
+			} else if(presencaJaRegistrada(codAluno, codAtividade, data)) {
+				printf("A Presença Deste Aluno Já Foi Registrada Neste Dia!\n");
+			} else {
+				nomeDoAluno(codAluno, nomeA);
+				printf("Aluno: %s\n", nomeA);
+				do {
+					printf("Presente? (1- Sim / 0- Não): ");
+					scanf("%d", &presente);
+					if(presente != 1 && presente != 0) printf("Informe 1 ou 0!\n");
+				} while(presente != 1 && presente != 0);
+
+				if(presente == 1 && contarPresentes(codAtividade, data) >= ativ.capacidade) {
+					printf("Capacidade Máxima da Atividade Atingida!\n");
+				} else {
+					nova.codigo = proximoCodigo("presencas.bin", sizeof(Presenca));
+					nova.codAluno = codAluno;
+					nova.codAtividade = codAtividade;
+					nova.data = data;
+					nova.presente = presente;
+
+					arq = fopen("presencas.bin", "ab+");
+					if(arq == NULL) {
+						printf("Erro na Abertura do Arquivo!\n\n");
+					} else {
+						fwrite(&nova, sizeof(Presenca), 1, arq);
+						fclose(arq);
+						printf("Presença registrada!\n");
+					}
+				}
+			}
+		}
+	} while(codAluno != 0);
+
+	printf("\nChamada encerrada!\n");
+	system("pause");
+}
+
+// LISTAR FREQUÊNCIA (também é o relatório de frequência por aluno, período e atividade).
+// Código 0 em aluno ou atividade significa "todos".
+void listarFrequencia(void) {
+	FILE *arq;
+	Presenca p;
+	Data inicio, fim;
+	int codAluno, codAtividade, total = 0, presentes = 0;
+	char nomeA[61], nomeAt[61];
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  LISTAGEM - Frequência\n");
+	printf("==============================================\n\n");
+
+	printf("Informe o Código do Aluno (0 para todos): ");
+	scanf("%d", &codAluno);
+	printf("Informe o Código da Atividade (0 para todas): ");
+	scanf("%d", &codAtividade);
+	do {
+		printf("Informe a Data Inicial (DD MM AAAA): ");
+		scanf("%d%d%d", &inicio.dia, &inicio.mes, &inicio.ano);
+		if(validaData(inicio) == 0) printf("Insira Uma Data Valida!\n\n");
+	} while(validaData(inicio) != 1);
+	do {
+		printf("Informe a Data Final (DD MM AAAA): ");
+		scanf("%d%d%d", &fim.dia, &fim.mes, &fim.ano);
+		if(validaData(fim) == 0) printf("Insira Uma Data Valida!\n\n");
+		else if(dataNumero(fim) < dataNumero(inicio)) {
+			printf("A Data Final Não Pode Ser Antes da Inicial!\n\n");
+			fim.ano = 0;
+		}
+	} while(validaData(fim) != 1);
+
+	printf("\n==============================================\n");
+	arq = fopen("presencas.bin", "rb");
+	if(arq == NULL) {
+		printf("Nenhuma presença registrada!\n\n");
+	} else {
+		while(fread(&p, sizeof(Presenca), 1, arq) == 1) {
+			if((codAluno == 0 || p.codAluno == codAluno) && (codAtividade == 0 || p.codAtividade == codAtividade)
+			   && dataNumero(p.data) >= dataNumero(inicio) && dataNumero(p.data) <= dataNumero(fim)) {
+				if(!nomeDoAluno(p.codAluno, nomeA)) strcpy(nomeA, "(não encontrado)");
+				if(!nomeDaAtividade(p.codAtividade, nomeAt)) strcpy(nomeAt, "(não encontrada)");
+				printf("Código: %d\n", p.codigo);
+				printf("Data: %02d/%02d/%d\n", p.data.dia, p.data.mes, p.data.ano);
+				printf("Aluno: %d - %s\n", p.codAluno, nomeA);
+				printf("Atividade: %d - %s\n", p.codAtividade, nomeAt);
+				printf("Presença: ");
+				if(p.presente == 1) printf("Presente\n");
+				else printf("Faltou\n");
+				printf("==============================================\n");
+				total++;
+				if(p.presente == 1) presentes++;
+			}
+		}
+		fclose(arq);
+		if(total == 0) printf("Nenhum registro encontrado!\n\n");
+		else printf("Total de registros: %d | Presenças: %d | Faltas: %d\n", total, presentes, total - presentes);
+	}
+	system("pause");
+}
+
+// ALTERAR FREQUÊNCIA: corrige a presença (presente/faltou) de um registro, pelo código da presença.
+void alterarFrequencia(void) {
+	FILE *arq, *arqAtiv;
+	Presenca p;
+	Atividade ativ;
+	int codigo, pos, novo, posAtiv;
+	char nomeA[61];
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  ALTERAR - Frequência\n");
+	printf("==============================================\n\n");
+
+	arq = fopen("presencas.bin", "rb+");
+	if(arq == NULL) {
+		printf("Nenhuma presença registrada!\n\n");
+		system("pause");
+		return;
+	}
+
+	printf("Informe o Código da Presença: ");
+	scanf("%d", &codigo);
+	rewind(arq);
+	pos = -1;
+	while(pos == -1 && fread(&p, sizeof(Presenca), 1, arq) == 1) {
+		if(p.codigo == codigo) pos = ftell(arq) - sizeof(Presenca);
+	}
+
+	if(pos == -1) {
+		printf("\nPresença Não Encontrada!\n\n");
+	} else {
+		if(!nomeDoAluno(p.codAluno, nomeA)) strcpy(nomeA, "(não encontrado)");
+		printf("\nAluno: %d - %s\n", p.codAluno, nomeA);
+		printf("Data: %02d/%02d/%d\n", p.data.dia, p.data.mes, p.data.ano);
+		printf("Situação atual: ");
+		if(p.presente == 1) printf("Presente\n");
+		else printf("Faltou\n");
+
+		do {
+			printf("Informe a Nova Situação (1- Presente / 0- Faltou): ");
+			scanf("%d", &novo);
+			if(novo != 1 && novo != 0) printf("Informe 1 ou 0!\n");
+		} while(novo != 1 && novo != 0);
+
+		if(novo == 1 && p.presente == 0) {
+			// falta virando presença: confere a capacidade da atividade
+			arqAtiv = fopen("atividades.bin", "rb");
+			if(arqAtiv != NULL) {
+				posAtiv = busca(arqAtiv, p.codAtividade, ENT_ATIVIDADE);
+				if(posAtiv != -1) {
+					fseek(arqAtiv, posAtiv, SEEK_SET);
+					fread(&ativ, sizeof(Atividade), 1, arqAtiv);
+					if(contarPresentes(p.codAtividade, p.data) >= ativ.capacidade) {
+						printf("Capacidade Máxima da Atividade Atingida!\n");
+						novo = p.presente;
+					}
+				}
+				fclose(arqAtiv);
+			}
+		}
+
+		if(novo != p.presente) {
+			p.presente = novo;
+			fseek(arq, pos, SEEK_SET);
+			fwrite(&p, sizeof(Presenca), 1, arq);
+			printf("\nAlteração Realizada com Sucesso!\n");
+		}
+	}
+	fclose(arq);
+	system("pause");
+}
+
+// ===== CONTROLE FINANCEIRO =====
+
+// Soma das mensalidades recebidas no mês/ano (pela data do pagamento).
+float somaRecebido(int mes, int ano) {
+	FILE *arq;
+	Cobranca c;
+	float total = 0;
+
+	arq = fopen("cobrancas.bin", "rb");
+	if(arq != NULL) {
+		while(fread(&c, sizeof(Cobranca), 1, arq) == 1) {
+			if(c.situacao == 2 && c.dataPagamento.mes == mes && c.dataPagamento.ano == ano) total = total + c.valor;
+		}
+		fclose(arq);
+	}
+	return total;
+}
+
+// Soma do valor retido (receita) nos cancelamentos do mês/ano.
+float somaRetido(int mes, int ano) {
+	FILE *arq;
+	Cancelamento c;
+	float total = 0;
+
+	arq = fopen("cancelamentos.bin", "rb");
+	if(arq != NULL) {
+		while(fread(&c, sizeof(Cancelamento), 1, arq) == 1) {
+			if(c.data.mes == mes && c.data.ano == ano) total = total + c.valorRetido;
+		}
+		fclose(arq);
+	}
+	return total;
+}
+
+// Soma do valor devolvido (saída) nos cancelamentos do mês/ano.
+float somaDevolvido(int mes, int ano) {
+	FILE *arq;
+	Cancelamento c;
+	float total = 0;
+
+	arq = fopen("cancelamentos.bin", "rb");
+	if(arq != NULL) {
+		while(fread(&c, sizeof(Cancelamento), 1, arq) == 1) {
+			if(c.data.mes == mes && c.data.ano == ano) total = total + c.valorDevolvido;
+		}
+		fclose(arq);
+	}
+	return total;
+}
+
+// Devolve o código do plano da matrícula (0 se a matrícula não existe).
+int codPlanoDaMatricula(int codMatricula) {
+	FILE *arq;
+	Matricula m;
+	int pos, codPlano = 0;
+
+	arq = fopen("matriculas.bin", "rb");
+	if(arq != NULL) {
+		pos = busca(arq, codMatricula, ENT_MATRICULA);
+		if(pos != -1) {
+			fseek(arq, pos, SEEK_SET);
+			fread(&m, sizeof(Matricula), 1, arq);
+			codPlano = m.codPlano;
+		}
+		fclose(arq);
+	}
+	return codPlano;
+}
+
+// FATURAMENTO MENSAL: receita de cada mês do ano = mensalidades recebidas + valores retidos em cancelamentos.
+void faturamentoMensal(void) {
+	int ano, mes;
+	float recebido, retido, totalAno = 0;
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  FATURAMENTO MENSAL\n");
+	printf("==============================================\n\n");
+
+	do {
+		printf("Informe o Ano (1900 a 2100): ");
+		scanf("%d", &ano);
+		if(ano < 1900 || ano > 2100) printf("Ano Inválido!\n\n");
+	} while(ano < 1900 || ano > 2100);
+
+	printf("\n Mês | Mensalidades |    Retenções |        Total\n");
+	printf("----------------------------------------------\n");
+	for(mes = 1; mes <= 12; mes++) {
+		recebido = somaRecebido(mes, ano);
+		retido = somaRetido(mes, ano);
+		printf("  %02d | R$ %9.2f | R$ %9.2f | R$ %9.2f\n", mes, recebido, retido, recebido + retido);
+		totalAno = totalAno + recebido + retido;
+	}
+	printf("----------------------------------------------\n");
+	printf("Faturamento total de %d: R$ %.2f\n\n", ano, totalAno);
+	system("pause");
+}
+
+// FATURAMENTO POR PLANO: receita do ano separada por plano (mensalidades + retenções).
+void faturamentoPorPlano(void) {
+	FILE *arqPlanos, *arq;
+	Plano p;
+	Cobranca c;
+	Cancelamento canc;
+	int ano, total = 0;
+	float recebido, retido, totalGeral = 0;
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  FATURAMENTO POR PLANO\n");
+	printf("==============================================\n\n");
+
+	do {
+		printf("Informe o Ano (1900 a 2100): ");
+		scanf("%d", &ano);
+		if(ano < 1900 || ano > 2100) printf("Ano Inválido!\n\n");
+	} while(ano < 1900 || ano > 2100);
+
+	arqPlanos = fopen("planos.bin", "rb");
+	if(arqPlanos == NULL) {
+		printf("\nNenhum plano cadastrado!\n\n");
+		system("pause");
+		return;
+	}
+
+	printf("\n==============================================\n");
+	while(fread(&p, sizeof(Plano), 1, arqPlanos) == 1) {
+		recebido = 0;
+		retido = 0;
+
+		arq = fopen("cobrancas.bin", "rb");
+		if(arq != NULL) {
+			while(fread(&c, sizeof(Cobranca), 1, arq) == 1) {
+				if(c.situacao == 2 && c.dataPagamento.ano == ano && codPlanoDaMatricula(c.codMatricula) == p.codigo) recebido = recebido + c.valor;
+			}
+			fclose(arq);
+		}
+		arq = fopen("cancelamentos.bin", "rb");
+		if(arq != NULL) {
+			while(fread(&canc, sizeof(Cancelamento), 1, arq) == 1) {
+				if(canc.data.ano == ano && codPlanoDaMatricula(canc.codMatricula) == p.codigo) retido = retido + canc.valorRetido;
+			}
+			fclose(arq);
+		}
+
+		printf("Plano: %d - %s\n", p.codigo, p.nome);
+		printf("Mensalidades recebidas: R$ %.2f\n", recebido);
+		printf("Valores retidos: R$ %.2f\n", retido);
+		printf("Total do plano: R$ %.2f\n", recebido + retido);
+		printf("==============================================\n");
+		totalGeral = totalGeral + recebido + retido;
+		total++;
+	}
+	fclose(arqPlanos);
+
+	if(total == 0) printf("Nenhum plano cadastrado!\n\n");
+	else printf("Faturamento total de %d: R$ %.2f\n\n", ano, totalGeral);
+	system("pause");
+}
+
+// GASTOS MENSAIS: despesas lançadas no mês + valores devolvidos em cancelamentos (saídas).
+void gastosMensais(void) {
+	FILE *arq;
+	Gasto g;
+	int mes, ano, total = 0;
+	float somaGastos = 0, devolvido;
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  GASTOS MENSAIS\n");
+	printf("==============================================\n\n");
+
+	do {
+		printf("Informe o Mês (1 a 12): ");
+		scanf("%d", &mes);
+		if(mes < 1 || mes > 12) printf("Mês Inválido!\n\n");
+	} while(mes < 1 || mes > 12);
+	do {
+		printf("Informe o Ano (1900 a 2100): ");
+		scanf("%d", &ano);
+		if(ano < 1900 || ano > 2100) printf("Ano Inválido!\n\n");
+	} while(ano < 1900 || ano > 2100);
+
+	printf("\n==============================================\n");
+	arq = fopen("gastos.bin", "rb");
+	if(arq != NULL) {
+		while(fread(&g, sizeof(Gasto), 1, arq) == 1) {
+			if(g.ativo == 1 && g.data.mes == mes && g.data.ano == ano) {
+				printf("Código: %d\n", g.codigo);
+				printf("Descrição: %s\n", g.descricao);
+				printf("Categoria: %s\n", g.categoria);
+				printf("Data: %02d/%02d/%d\n", g.data.dia, g.data.mes, g.data.ano);
+				printf("Valor: R$ %.2f\n", g.valor);
+				printf("==============================================\n");
+				somaGastos = somaGastos + g.valor;
+				total++;
+			}
+		}
+		fclose(arq);
+	}
+	if(total == 0) printf("Nenhum gasto lançado neste mês!\n");
+
+	devolvido = somaDevolvido(mes, ano);
+	printf("\nGastos lançados: R$ %.2f\n", somaGastos);
+	printf("Devoluções de cancelamentos: R$ %.2f\n", devolvido);
+	printf("Total de saídas em %02d/%d: R$ %.2f\n\n", mes, ano, somaGastos + devolvido);
+	system("pause");
+}
+
+// PAGAMENTOS POR ALUNO: histórico das cobranças de todas as matrículas do aluno.
+void pagamentosPorAluno(void) {
+	FILE *arqMat, *arqCob;
+	Matricula m;
+	Cobranca c;
+	int codAluno, achouMat = 0;
+	float pago = 0, pendente = 0;
+	char nomeA[61];
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  PAGAMENTOS POR ALUNO\n");
+	printf("==============================================\n\n");
+
+	printf("Informe o Código do Aluno: ");
+	scanf("%d", &codAluno);
+	if(!nomeDoAluno(codAluno, nomeA)) {
+		printf("\nAluno Não Encontrado!\n\n");
+		system("pause");
+		return;
+	}
+
+	printf("\nAluno: %d - %s\n", codAluno, nomeA);
+	printf("==============================================\n");
+	arqMat = fopen("matriculas.bin", "rb");
+	if(arqMat != NULL) {
+		while(fread(&m, sizeof(Matricula), 1, arqMat) == 1) {
+			if(m.codAluno == codAluno) {
+				achouMat = 1;
+				printf("Matrícula %d (", m.codigo);
+				if(m.situacao == 1) printf("ativa)\n");
+				else printf("cancelada)\n");
+
+				arqCob = fopen("cobrancas.bin", "rb");
+				if(arqCob != NULL) {
+					while(fread(&c, sizeof(Cobranca), 1, arqCob) == 1) {
+						if(c.codMatricula == m.codigo) {
+							printf("  Ref. %02d/%d | Venc. %02d/%02d/%d | R$ %.2f | ", c.mesRef, c.anoRef, c.vencimento.dia, c.vencimento.mes, c.vencimento.ano, c.valor);
+							if(c.situacao == 2) {
+								printf("Paga em %02d/%02d/%d\n", c.dataPagamento.dia, c.dataPagamento.mes, c.dataPagamento.ano);
+								pago = pago + c.valor;
+							} else if(c.situacao == 1) {
+								printf("Pendente\n");
+								pendente = pendente + c.valor;
+							} else {
+								printf("Cancelada\n");
+							}
+						}
+					}
+					fclose(arqCob);
+				}
+				printf("----------------------------------------------\n");
+			}
+		}
+		fclose(arqMat);
+	}
+	if(achouMat == 0) printf("Este aluno não possui matrícula!\n\n");
+	else {
+		printf("Total pago: R$ %.2f\n", pago);
+		printf("Total pendente: R$ %.2f\n\n", pendente);
+	}
+	system("pause");
+}
+
+// CADASTRAR GASTOS: lança uma despesa da academia (o código é automático).
+void cadastrarGasto(void) {
+	FILE *arq;
+	Gasto novo;
+
+	system("cls");
+	printf("==============================================\n");
+	printf("  CADASTRAR - Gastos\n");
+	printf("==============================================\n\n");
+
+	arq = fopen("gastos.bin", "ab+");
+	if(arq == NULL) {
+		printf("Erro na Abertura do Arquivo!\n\n");
+		system("pause");
+		return;
+	}
+
+	novo.codigo = proximoCodigo("gastos.bin", sizeof(Gasto));
+
+	fflush(stdin);
+	printf("Informe a Descrição do Gasto: ");
+	fgets(novo.descricao, 61, stdin);
+	if(validaExcedeu(novo.descricao) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
+
+	printf("Informe a Categoria (ex.: Água, Luz, Manutenção): ");
+	fgets(novo.categoria, 31, stdin);
+	if(validaExcedeu(novo.categoria) == 1) printf("Somente os Primeiros 30 Caracteres Serão Cadastrados!\n\n");
+
+	do {
+		printf("Informe o Valor: R$ ");
+		scanf("%f", &novo.valor);
+		if(novo.valor <= 0) printf("O Valor Deve Ser Maior que Zero!\n\n");
+	} while(novo.valor <= 0);
+
+	do {
+		printf("Informe a Data do Gasto (DD MM AAAA): ");
+		scanf("%d%d%d", &novo.data.dia, &novo.data.mes, &novo.data.ano);
+		if(validaData(novo.data) == 0) printf("Insira Uma Data Valida!\n\n");
+	} while(validaData(novo.data) != 1);
+
+	novo.ativo = 1;
+	fseek(arq, 0, SEEK_END);
+	fwrite(&novo, sizeof(Gasto), 1, arq);
+	fclose(arq);
+	printf("\nGasto cadastrado com sucesso! (código %d)\n", novo.codigo);
+	system("pause");
 }
 
 //6 - FUNÇÃO DE RELATÓRIOS
@@ -4112,6 +5298,7 @@ void relatorios(void) {
 			case 5:
 				break;
 			case 6:
+				listarFrequencia();
 				break;
 			case 7:
 				relatorioAlfabetico();
