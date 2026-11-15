@@ -1939,6 +1939,7 @@ void alterarTreino() {
 						getchar();
 						printf("Informe o Novo Nome do Treino: ");
 						fgets(treinos.nome, 31, stdin);
+						if(validaExcedeu(treinos.nome) == 1) printf("Somente os Primeiros 30 Caracteres Serão Cadastrados!\n\n");
 						
 						fseek(arq, pos, SEEK_SET);
 						fwrite(&treinos, sizeof(Treino), 1, arq);
@@ -1989,13 +1990,14 @@ void alterarTreino() {
 								
 								printf("\nExercícios:\n");
 								for(i=0; i<treinos.quantidade; i++) {
-									printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+									printf("  %d) Exercício: %s\n", i+1, treinos.exercicios[i]);
 								}
 								
 								printf("\nNovos Exercícios:\n");
 								for(i=0; i<treinos.quantidade; i++) {
 									printf("  %d) Exercício: ", i+1);
 								    fgets(treinos.exercicios[i], 41, stdin);
+								    if(validaExcedeu(treinos.exercicios[i]) == 1) printf("Somente os Primeiros 40 Caracteres Serão Cadastrados!\n\n");
 								}
 								
 								fseek(arq, pos, SEEK_SET);
@@ -2032,7 +2034,7 @@ void alterarTreino() {
 								
 								printf("\nExercícios:\n");
 								for(i=0; i<treinos.quantidade; i++) {
-									printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+									printf("  %d) Exercício: %s\n", i+1, treinos.exercicios[i]);
 								}
 								
 								printf("\nInforme o Número do Exercício a Alterar: ");
@@ -2041,10 +2043,11 @@ void alterarTreino() {
 								
 								if(numExerc>=1 && numExerc<=treinos.quantidade) {
 									indice = numExerc - 1;
-									printf("  %d) Exercício: %s", indice+1, treinos.exercicios[indice]);
+									printf("  %d) Exercício: %s\n", indice+1, treinos.exercicios[indice]);
 											
 									printf("\nNovo Exercício: ");
 									fgets(treinos.exercicios[indice], 41, stdin);
+									if(validaExcedeu(treinos.exercicios[indice]) == 1) printf("Somente os Primeiros 40 Caracteres Serão Cadastrados!\n\n");
 									
 									fseek(arq, pos, SEEK_SET);
 									fwrite(&treinos, sizeof(Treino), 1, arq);
@@ -2099,7 +2102,7 @@ void alterarTreino() {
 								
 								printf("\nExercícios:\n");
 								for(i=0; i<treinos.quantidade; i++) {
-									printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+									printf("  %d) Exercício: %s\n", i+1, treinos.exercicios[i]);
 								}
 								
 								do {
@@ -2108,7 +2111,7 @@ void alterarTreino() {
 									
 										printf("\nExercícios:\n");
 										for(i=0; i<treinos.quantidade; i++) {
-											printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+											printf("  %d) Exercício: %s\n", i+1, treinos.exercicios[i]);
 										}
 									}
 									
@@ -2117,6 +2120,7 @@ void alterarTreino() {
 									
 									printf("\nNovo Exercício: ");
 									fgets(treinos.exercicios[treinos.quantidade], 41, stdin);
+									if(validaExcedeu(treinos.exercicios[treinos.quantidade]) == 1) printf("Somente os Primeiros 40 Caracteres Serão Cadastrados!\n\n");
 								
 									for(i=0; i<treinos.quantidade; i++) {
 										if(stricmp(treinos.exercicios[treinos.quantidade], treinos.exercicios[i]) == 0) {
@@ -2174,7 +2178,7 @@ void alterarTreino() {
 								
 								printf("\nExercícios:\n");
 								for(i=0; i<treinos.quantidade; i++) {
-									printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+									printf("  %d) Exercício: %s\n", i+1, treinos.exercicios[i]);
 								}
 								
 								printf("\nInforme o Número do Exercício a Remover: ");
@@ -2183,7 +2187,7 @@ void alterarTreino() {
 									
 								if(numExerc>=1 && numExerc<=treinos.quantidade) {
 									indice = numExerc - 1;
-									printf("  %d) Exercício: %s", indice+1, treinos.exercicios[indice]);
+									printf("  %d) Exercício: %s\n", indice+1, treinos.exercicios[indice]);
 												
 									printf("\nDeseja Remover o Exercício? (S/N): ");
 									if(toupper(getche()) == 'S') {
@@ -2249,6 +2253,7 @@ void alterarTreino() {
 						getchar();
 						printf("Informe o Novo Objetivo: ");
 						fgets(treinos.objetivo, 61, stdin);
+						if(validaExcedeu(treinos.objetivo) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
 						
 						fseek(arq, pos, SEEK_SET);
 						fwrite(&treinos, sizeof(Treino), 1, arq);
@@ -2331,6 +2336,7 @@ void alterarEquipamento() {
 						getchar();
 						printf("Informe o Novo Nome do Equipamento: ");
 						fgets(equipamentos.nome, 31, stdin);
+						if(validaExcedeu(equipamentos.nome) == 1) printf("Somente os Primeiros 30 Caracteres Serão Cadastrados!\n\n");
 						
 						fseek(arq, pos, SEEK_SET);
 						fwrite(&equipamentos, sizeof(Equipamento), 1, arq);
@@ -2367,6 +2373,7 @@ void alterarEquipamento() {
 						getchar();
 						printf("Informe o Novo Tipo do Equipamento: ");
 						fgets(equipamentos.tipo, 31, stdin);
+						if(validaExcedeu(equipamentos.tipo) == 1) printf("Somente os Primeiros 30 Caracteres Serão Cadastrados!\n\n");
 						
 						fseek(arq, pos, SEEK_SET);
 						fwrite(&equipamentos, sizeof(Equipamento), 1, arq);
@@ -2636,12 +2643,12 @@ void excluirTreino() {
 			}
 		}
 				
-		printf("Nome do Treino: %s", treinos.nome);
+		printf("Nome do Treino: %s\n", treinos.nome);
 		printf("Objetivo do Treino: %s\n", treinos.objetivo);
 				
 		printf("Exercícios:\n");
 		for(i=0; i<treinos.quantidade; i++) {
-			printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+			printf("  %d) Exercício: %s\n", i+1, treinos.exercicios[i]);
 		}
 					
 		printf("\nCriado em: %d/%d/%d\n", treinos.dataCriacao.dia, treinos.dataCriacao.mes, treinos.dataCriacao.ano);
@@ -2729,8 +2736,8 @@ void excluirEquipamento() {
 		printf("\n==============================================\n");
 		printf("Código do Equipamento: %d\n\n", equipamentos.codigo);
 				
-		printf("Nome do Equipamento: %s", equipamentos.nome);
-		printf("Tipo do Equipamento: %s", equipamentos.tipo);
+		printf("Nome do Equipamento: %s\n", equipamentos.nome);
+		printf("Tipo do Equipamento: %s\n", equipamentos.tipo);
 		printf("Data de Aquisição: %d/%d/%d\n\n", equipamentos.dataAquisicao.dia, equipamentos.dataAquisicao.mes, equipamentos.dataAquisicao.ano);
 				
 		printf("Quantidade: %d\n", equipamentos.quantidade);
@@ -2846,12 +2853,12 @@ void listarTreinos() {
 					}
 				}
 				
-				printf("Nome do Treino: %s", treinos.nome);
+				printf("Nome do Treino: %s\n", treinos.nome);
 				printf("Objetivo do Treino: %s\n", treinos.objetivo);
 				
 				printf("Exercícios:\n");
 				for(i=0; i<treinos.quantidade; i++) {
-					printf("  %d) Exercício: %s", i+1, treinos.exercicios[i]);
+					printf("  %d) Exercício: %s\n", i+1, treinos.exercicios[i]);
 				}
 					
 				printf("\nCriado em: %d/%d/%d\n", treinos.dataCriacao.dia, treinos.dataCriacao.mes, treinos.dataCriacao.ano);
@@ -2913,8 +2920,8 @@ void listarEquipamentos() {
 			                if (equipamentos.situacao == 1) {
 			                    printf("Código do Equipamento: %d\n\n", equipamentos.codigo);
 			
-			                    printf("Nome do Equipamento: %s", equipamentos.nome);
-			                    printf("Tipo do Equipamento: %s", equipamentos.tipo);
+			                    printf("Nome do Equipamento: %s\n", equipamentos.nome);
+			                    printf("Tipo do Equipamento: %s\n", equipamentos.tipo);
 			                    printf("Data de Aquisição: %d/%d/%d\n\n", equipamentos.dataAquisicao.dia, equipamentos.dataAquisicao.mes, equipamentos.dataAquisicao.ano);
 			
 			                    printf("Quantidade: %d\n", equipamentos.quantidade);
@@ -2944,8 +2951,8 @@ void listarEquipamentos() {
 			                if (equipamentos.situacao == 2) {
 			                    printf("Código do Equipamento: %d\n\n", equipamentos.codigo);
 			
-			                    printf("Nome do Equipamento: %s", equipamentos.nome);
-			                    printf("Tipo do Equipamento: %s", equipamentos.tipo);
+			                    printf("Nome do Equipamento: %s\n", equipamentos.nome);
+			                    printf("Tipo do Equipamento: %s\n", equipamentos.tipo);
 			                    printf("Data de Aquisição: %d/%d/%d\n\n", equipamentos.dataAquisicao.dia, equipamentos.dataAquisicao.mes, equipamentos.dataAquisicao.ano);
 			
 			                    printf("Quantidade: %d\n", equipamentos.quantidade);
@@ -2975,8 +2982,8 @@ void listarEquipamentos() {
 			                if (equipamentos.situacao == 3) {
 			                    printf("Código do Equipamento: %d\n\n", equipamentos.codigo);
 			
-			                    printf("Nome do Equipamento: %s", equipamentos.nome);
-			                    printf("Tipo do Equipamento: %s", equipamentos.tipo);
+			                    printf("Nome do Equipamento: %s\n", equipamentos.nome);
+			                    printf("Tipo do Equipamento: %s\n", equipamentos.tipo);
 			                    printf("Data de Aquisição: %d/%d/%d\n\n", equipamentos.dataAquisicao.dia, equipamentos.dataAquisicao.mes, equipamentos.dataAquisicao.ano);
 			
 			                    printf("Quantidade: %d\n", equipamentos.quantidade);
@@ -3005,8 +3012,8 @@ void listarEquipamentos() {
 			            while (fread(&equipamentos, sizeof(Equipamento), 1, arq) == 1) {
 			                printf("Código do Equipamento: %d\n\n", equipamentos.codigo);
 			
-			                printf("Nome do Equipamento: %s", equipamentos.nome);
-			                printf("Tipo do Equipamento: %s", equipamentos.tipo);
+			                printf("Nome do Equipamento: %s\n", equipamentos.nome);
+			                printf("Tipo do Equipamento: %s\n", equipamentos.tipo);
 			                printf("Data de Aquisição: %d/%d/%d\n\n", equipamentos.dataAquisicao.dia, equipamentos.dataAquisicao.mes, equipamentos.dataAquisicao.ano);
 			
 			                printf("Quantidade: %d\n", equipamentos.quantidade);
@@ -3104,10 +3111,12 @@ void cadastrarTreino() {
 		fflush(stdin);
 		printf("Informe o Nome do Treino: ");
 		fgets(treinos.nome, 31, stdin);
+		if(validaExcedeu(treinos.nome) == 1) printf("Somente os Primeiros 30 Caracteres Serão Cadastrados!\n\n");
 		
 		fflush(stdin);
 		printf("Informe o Objetivo do Treino: ");
 		fgets(treinos.objetivo, 61, stdin);
+		if(validaExcedeu(treinos.objetivo) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
 		
 		do {
 			printf("\nInforme Quantos Exercícios Deseja Cadastrar: ");
@@ -3118,6 +3127,7 @@ void cadastrarTreino() {
 				for(i=0; i<treinos.quantidade; i++) {
 					printf("  %d) Exercício: ", i+1);
 				    fgets(treinos.exercicios[i], 41, stdin);
+				    if(validaExcedeu(treinos.exercicios[i]) == 1) printf("Somente os Primeiros 40 Caracteres Serão Cadastrados!\n\n");
 				}
 			} else {
 				printf("[AVISO] A Quantidade Máxima de Exercícios por Treino é 10!!\n\n");
@@ -3173,10 +3183,12 @@ void cadastrarEquipamento() {
 		fflush(stdin);
 		printf("\nInforme o Nome do Equipamento: ");
 		fgets(equipamentos.nome, 61, stdin);
+		if(validaExcedeu(equipamentos.nome) == 1) printf("Somente os Primeiros 60 Caracteres Serão Cadastrados!\n\n");
 		
 		fflush(stdin);
 		printf("Informe o Tipo do Equipamento: ");
 		fgets(equipamentos.tipo, 31, stdin);
+		if(validaExcedeu(equipamentos.tipo) == 1) printf("Somente os Primeiros 30 Caracteres Serão Cadastrados!\n\n");
 		
 		printf("Informe a Data de Aquisição (DD MM AAAA): ");
 		scanf("%d%d%d", &equipamentos.dataAquisicao.dia, &equipamentos.dataAquisicao.mes, &equipamentos.dataAquisicao.ano);
@@ -3871,70 +3883,18 @@ void operacoes(void) {
 
 //6 - FUNÇÃO DE RELATÓRIOS
 // ===== RELATÓRIO EM ORDEM ALFABÉTICA =====
-// Ordena uma CÓPIA do arquivo (ordenado.bin) com a lógica do professor
-// (troca de registros vizinhos usando fseek/fread/fwrite), assim o arquivo original não muda de ordem.
-typedef union {
-	Aluno        a;
-	Profissional p;
-	Treino       t;
-	Plano        pl;
-	Atividade    at;
-	Equipamento  e;
-} Registro;
-
-int tamanhoRegistro(int codEnt) {
-	switch(codEnt) {
-		case ENT_ALUNO:        return sizeof(Aluno);
-		case ENT_PROFISSIONAL: return sizeof(Profissional);
-		case ENT_TREINO:       return sizeof(Treino);
-		case ENT_PLANO:        return sizeof(Plano);
-		case ENT_ATIVIDADE:    return sizeof(Atividade);
-		case ENT_EQUIPAMENTO:  return sizeof(Equipamento);
-	}
-	return 0;
-}
-
-void nomeRegistro(Registro *r, int codEnt, char destino[]) {
-	switch(codEnt) {
-		case ENT_ALUNO:        strcpy(destino, r->a.nome);  break;
-		case ENT_PROFISSIONAL: strcpy(destino, r->p.nome);  break;
-		case ENT_TREINO:       strcpy(destino, r->t.nome);  break;
-		case ENT_PLANO:        strcpy(destino, r->pl.nome); break;
-		case ENT_ATIVIDADE:    strcpy(destino, r->at.nome); break;
-		case ENT_EQUIPAMENTO:  strcpy(destino, r->e.nome);  break;
-	}
-	if(strlen(destino) > 0 && destino[strlen(destino)-1] == '\n') destino[strlen(destino)-1] = '\0';
-}
-
-int codigoRegistro(Registro *r, int codEnt) {
-	switch(codEnt) {
-		case ENT_ALUNO:        return r->a.codigo;
-		case ENT_PROFISSIONAL: return r->p.codigo;
-		case ENT_TREINO:       return r->t.codigo;
-		case ENT_PLANO:        return r->pl.codigo;
-		case ENT_ATIVIDADE:    return r->at.codigo;
-		case ENT_EQUIPAMENTO:  return r->e.codigo;
-	}
-	return 0;
-}
-
-int ativoRegistro(Registro *r, int codEnt) {
-	switch(codEnt) {
-		case ENT_ALUNO:        return r->a.ativo;
-		case ENT_PROFISSIONAL: return r->p.ativo;
-		case ENT_TREINO:       return r->t.ativo;
-		case ENT_PLANO:        return r->pl.ativo;
-		case ENT_ATIVIDADE:    return r->at.ativo;
-		case ENT_EQUIPAMENTO:  return r->e.ativo;
-	}
-	return 0;
-}
-
+// Ordena o próprio arquivo pelo nome (troca registros vizinhos com fseek/fread/fwrite,
+// igual ao ordenar() da agenda da professora) e depois lista na tela.
 void relatorioAlfabetico(void) {
-	FILE *arq, *ordenado;
-	Registro reg, regi;
-	char nome1[61], nome2[61], arquivo[31], titulo[31];
-	int opcao, codEnt, tam, qtde, i, total;
+	FILE *arq;
+	Aluno        al, ali;
+	Profissional pr, pri;
+	Treino       tr, tri;
+	Plano        pl, pli;
+	Atividade    at, ati;
+	Equipamento  eq, eqi;
+	char arquivo[31], titulo[31];
+	int opcao, codEnt, qtde, total, i;
 
 	system("cls");
 	printf("==============================================\n");
@@ -3967,70 +3927,146 @@ void relatorioAlfabetico(void) {
 			return;
 	}
 
-	tam = tamanhoRegistro(codEnt);
-
-	arq = fopen(arquivo, "rb");
+	arq = fopen(arquivo, "rb+");
 	if(arq == NULL) {
 		printf("\nNenhum Registro Cadastrado!\n\n");
 		system("pause");
 		return;
 	}
 
-	// copia os registros para o arquivo auxiliar
-	ordenado = fopen("ordenado.bin", "wb");
-	if(ordenado == NULL) {
-		printf("Erro na Abertura do Arquivo!\n\n");
-		fclose(arq);
-		system("pause");
-		return;
+	// quantidade de registros = tamanho do arquivo / tamanho de cada registro
+	fseek(arq, 0, SEEK_END);
+	switch(codEnt) {
+		case ENT_ALUNO:        qtde = ftell(arq) / sizeof(Aluno);        break;
+		case ENT_PROFISSIONAL: qtde = ftell(arq) / sizeof(Profissional); break;
+		case ENT_TREINO:       qtde = ftell(arq) / sizeof(Treino);       break;
+		case ENT_PLANO:        qtde = ftell(arq) / sizeof(Plano);        break;
+		case ENT_ATIVIDADE:    qtde = ftell(arq) / sizeof(Atividade);    break;
+		case ENT_EQUIPAMENTO:  qtde = ftell(arq) / sizeof(Equipamento);  break;
 	}
-	while(fread(&reg, tam, 1, arq) == 1) {
-		fwrite(&reg, tam, 1, ordenado);
-	}
-	fclose(arq);
-	fclose(ordenado);
-
-	// ordena o arquivo auxiliar (bubble sort direto no arquivo)
-	ordenado = fopen("ordenado.bin", "rb+");
-	if(ordenado == NULL) {
-		printf("Erro na Abertura do Arquivo!\n\n");
-		system("pause");
-		return;
-	}
-	fseek(ordenado, 0, SEEK_END);
-	qtde = ftell(ordenado) / tam;
 	total = qtde;
+
+	// ordena pelo nome (bubble sort direto no arquivo)
 	while(qtde > 1) {
 		for(i = 0; i < qtde - 1; i++) {
-			fseek(ordenado, i * tam, SEEK_SET);
-			fread(&reg, tam, 1, ordenado);
-			fseek(ordenado, (i + 1) * tam, SEEK_SET);
-			fread(&regi, tam, 1, ordenado);
-			nomeRegistro(&reg, codEnt, nome1);
-			nomeRegistro(&regi, codEnt, nome2);
-			if(stricmp(nome1, nome2) > 0) {
-				fseek(ordenado, i * tam, SEEK_SET);
-				fwrite(&regi, tam, 1, ordenado);
-				fseek(ordenado, (i + 1) * tam, SEEK_SET);
-				fwrite(&reg, tam, 1, ordenado);
+			switch(codEnt) {
+				case ENT_ALUNO:
+					fseek(arq, i * sizeof(Aluno), SEEK_SET);
+					fread(&al, sizeof(Aluno), 1, arq);
+					fseek(arq, (i + 1) * sizeof(Aluno), SEEK_SET);
+					fread(&ali, sizeof(Aluno), 1, arq);
+					if(stricmp(al.nome, ali.nome) > 0) {
+						fseek(arq, i * sizeof(Aluno), SEEK_SET);
+						fwrite(&ali, sizeof(Aluno), 1, arq);
+						fseek(arq, (i + 1) * sizeof(Aluno), SEEK_SET);
+						fwrite(&al, sizeof(Aluno), 1, arq);
+					}
+					break;
+				case ENT_PROFISSIONAL:
+					fseek(arq, i * sizeof(Profissional), SEEK_SET);
+					fread(&pr, sizeof(Profissional), 1, arq);
+					fseek(arq, (i + 1) * sizeof(Profissional), SEEK_SET);
+					fread(&pri, sizeof(Profissional), 1, arq);
+					if(stricmp(pr.nome, pri.nome) > 0) {
+						fseek(arq, i * sizeof(Profissional), SEEK_SET);
+						fwrite(&pri, sizeof(Profissional), 1, arq);
+						fseek(arq, (i + 1) * sizeof(Profissional), SEEK_SET);
+						fwrite(&pr, sizeof(Profissional), 1, arq);
+					}
+					break;
+				case ENT_TREINO:
+					fseek(arq, i * sizeof(Treino), SEEK_SET);
+					fread(&tr, sizeof(Treino), 1, arq);
+					fseek(arq, (i + 1) * sizeof(Treino), SEEK_SET);
+					fread(&tri, sizeof(Treino), 1, arq);
+					if(stricmp(tr.nome, tri.nome) > 0) {
+						fseek(arq, i * sizeof(Treino), SEEK_SET);
+						fwrite(&tri, sizeof(Treino), 1, arq);
+						fseek(arq, (i + 1) * sizeof(Treino), SEEK_SET);
+						fwrite(&tr, sizeof(Treino), 1, arq);
+					}
+					break;
+				case ENT_PLANO:
+					fseek(arq, i * sizeof(Plano), SEEK_SET);
+					fread(&pl, sizeof(Plano), 1, arq);
+					fseek(arq, (i + 1) * sizeof(Plano), SEEK_SET);
+					fread(&pli, sizeof(Plano), 1, arq);
+					if(stricmp(pl.nome, pli.nome) > 0) {
+						fseek(arq, i * sizeof(Plano), SEEK_SET);
+						fwrite(&pli, sizeof(Plano), 1, arq);
+						fseek(arq, (i + 1) * sizeof(Plano), SEEK_SET);
+						fwrite(&pl, sizeof(Plano), 1, arq);
+					}
+					break;
+				case ENT_ATIVIDADE:
+					fseek(arq, i * sizeof(Atividade), SEEK_SET);
+					fread(&at, sizeof(Atividade), 1, arq);
+					fseek(arq, (i + 1) * sizeof(Atividade), SEEK_SET);
+					fread(&ati, sizeof(Atividade), 1, arq);
+					if(stricmp(at.nome, ati.nome) > 0) {
+						fseek(arq, i * sizeof(Atividade), SEEK_SET);
+						fwrite(&ati, sizeof(Atividade), 1, arq);
+						fseek(arq, (i + 1) * sizeof(Atividade), SEEK_SET);
+						fwrite(&at, sizeof(Atividade), 1, arq);
+					}
+					break;
+				case ENT_EQUIPAMENTO:
+					fseek(arq, i * sizeof(Equipamento), SEEK_SET);
+					fread(&eq, sizeof(Equipamento), 1, arq);
+					fseek(arq, (i + 1) * sizeof(Equipamento), SEEK_SET);
+					fread(&eqi, sizeof(Equipamento), 1, arq);
+					if(stricmp(eq.nome, eqi.nome) > 0) {
+						fseek(arq, i * sizeof(Equipamento), SEEK_SET);
+						fwrite(&eqi, sizeof(Equipamento), 1, arq);
+						fseek(arq, (i + 1) * sizeof(Equipamento), SEEK_SET);
+						fwrite(&eq, sizeof(Equipamento), 1, arq);
+					}
+					break;
 			}
 		}
 		qtde--;
 	}
 
-	// exibe
+	// exibe na tela
 	system("cls");
 	printf("==============================================\n");
 	printf("  %s em Ordem Alfabética\n", titulo);
 	printf("==============================================\n\n");
-	rewind(ordenado);
-	while(fread(&reg, tam, 1, ordenado) == 1) {
-		nomeRegistro(&reg, codEnt, nome1);
-		printf("  Código: %-5d Nome: %-30s %s\n", codigoRegistro(&reg, codEnt), nome1, ativoRegistro(&reg, codEnt) == 1 ? "Ativo" : "Inativo");
+	rewind(arq);
+	switch(codEnt) {
+		case ENT_ALUNO:
+			while(fread(&al, sizeof(Aluno), 1, arq) == 1) {
+				printf("  Código: %-5d Nome: %-30s %s\n", al.codigo, al.nome, al.ativo == 1 ? "Ativo" : "Inativo");
+			}
+			break;
+		case ENT_PROFISSIONAL:
+			while(fread(&pr, sizeof(Profissional), 1, arq) == 1) {
+				printf("  Código: %-5d Nome: %-30s %s\n", pr.codigo, pr.nome, pr.ativo == 1 ? "Ativo" : "Inativo");
+			}
+			break;
+		case ENT_TREINO:
+			while(fread(&tr, sizeof(Treino), 1, arq) == 1) {
+				printf("  Código: %-5d Nome: %-30s %s\n", tr.codigo, tr.nome, tr.ativo == 1 ? "Ativo" : "Inativo");
+			}
+			break;
+		case ENT_PLANO:
+			while(fread(&pl, sizeof(Plano), 1, arq) == 1) {
+				printf("  Código: %-5d Nome: %-30s %s\n", pl.codigo, pl.nome, pl.ativo == 1 ? "Ativo" : "Inativo");
+			}
+			break;
+		case ENT_ATIVIDADE:
+			while(fread(&at, sizeof(Atividade), 1, arq) == 1) {
+				printf("  Código: %-5d Nome: %-30s %s\n", at.codigo, at.nome, at.ativo == 1 ? "Ativo" : "Inativo");
+			}
+			break;
+		case ENT_EQUIPAMENTO:
+			while(fread(&eq, sizeof(Equipamento), 1, arq) == 1) {
+				printf("  Código: %-5d Nome: %-30s %s\n", eq.codigo, eq.nome, eq.ativo == 1 ? "Ativo" : "Inativo");
+			}
+			break;
 	}
 	printf("\n  Total: %d registro(s)\n\n", total);
-	fclose(ordenado);
-	remove("ordenado.bin");
+	fclose(arq);
 	system("pause");
 }
 
