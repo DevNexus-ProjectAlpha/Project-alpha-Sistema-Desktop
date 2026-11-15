@@ -220,6 +220,8 @@ void excluirAtividade(void);
 void listarAtividades(void);
 void cadastrarPlano(void);
 float calcularValorPlano(Plano p);
+int  lerValorPlano(float *valor);
+int  arquivoExiste(char nome[]);
 void alterarPlano(void);
 void excluirPlano(void);
 void listarPlanos(void);
@@ -1230,7 +1232,46 @@ void listarAvaliacoes(void) {
 	system("pause");
 }
 
-// ===================== INÍCIO DO MENU PLANOS (parte da Ana) =====================
+// Lê um valor em reais (aceita 100, 100.50 ou 100,50). Não usa scanf nem strtod,
+// por isso funciona igual com o setlocale("Portuguese") do programa.
+// Devolve 1 se leu um valor válido (guardado em *valor) e 0 se não.
+int lerValorPlano(float *valor) {
+	char texto[32];
+	int i = 0, digitos = 0, temSeparador = 0, c;
+	double numero = 0, casa = 1;
+
+	if(fgets(texto, 32, stdin) == NULL) {
+		clearerr(stdin);
+		return 0;
+	}
+	if(strchr(texto, '\n') == NULL) {
+		while((c = getchar()) != '\n' && c != EOF);
+		return 0;
+	}
+	while(texto[i] == ' ') i++;
+	while(texto[i] != '\n') {
+		if(isdigit(texto[i])) {
+			if(temSeparador == 0) numero = numero * 10 + (texto[i] - '0');
+			else {
+				casa = casa / 10;
+				numero = numero + (texto[i] - '0') * casa;
+			}
+			digitos++;
+		} else if((texto[i] == '.' || texto[i] == ',') && temSeparador == 0) {
+			temSeparador = 1;
+		} else if(texto[i] == ' ') {
+			while(texto[i] == ' ') i++;      // só espaços até o Enter
+			if(texto[i] != '\n') return 0;
+			break;
+		} else return 0;                     // letra ou símbolo
+		i++;
+	}
+	if(digitos == 0) return 0;
+
+	*valor = (float)numero;
+	return 1;
+}
+
 // Mostra o menu de tipos e preenche nome, meses e desconto do plano recebido.
 // O desconto NÃO é digitado: sai do tipo (Mensal 0%, Trimestral 5%, Semestral 10%, Anual 15%).
 // Devolve 1 se escolheu um tipo válido e 0 se não.
@@ -1397,13 +1438,17 @@ void cadastrarPlano(void) {
 		if(tipoPlanoRepetido(arq, planos.nome, 0) == 1) {
 			printf("\nEste tipo de plano já está cadastrado!\n");
 		} else {
+			fflush(stdin);
 			do {
 				printf("\nInforme o valor mensal: R$ ");
-				scanf("%f", &planos.valorMensal);
-				if(planos.valorMensal <= 0 || planos.valorMensal > 100000) {
+				if(lerValorPlano(&planos.valorMensal) == 0) {
+					printf("Digite apenas números (ex.: 100,50)!\n");
+					planos.valorMensal = 0;
+				} else if(planos.valorMensal <= 0 || planos.valorMensal > 100000) {
 					printf("O valor deve ser maior que zero e menor que 100000!\n");
+					planos.valorMensal = 0;
 				}
-			} while(planos.valorMensal <= 0 || planos.valorMensal > 100000);
+			} while(planos.valorMensal <= 0);
 
 			planos.ativo = 1;
 
@@ -1497,13 +1542,17 @@ void alterarPlano(void) {
 								}
 								break;
 							case 2:
+								fflush(stdin);
 								do {
 									printf("Informe o Novo Valor Mensal: R$ ");
-									scanf("%f", &planos.valorMensal);
-									if(planos.valorMensal <= 0 || planos.valorMensal > 100000) {
+									if(lerValorPlano(&planos.valorMensal) == 0) {
+										printf("Digite apenas números (ex.: 100,50)!\n\n");
+										planos.valorMensal = 0;
+									} else if(planos.valorMensal <= 0 || planos.valorMensal > 100000) {
 										printf("O valor deve ser maior que zero e menor que 100000!\n\n");
+										planos.valorMensal = 0;
 									}
-								} while(planos.valorMensal <= 0 || planos.valorMensal > 100000);
+								} while(planos.valorMensal <= 0);
 								gravar = 1;
 								break;
 							case 3:
@@ -1589,9 +1638,7 @@ void excluirPlano(void) {
 	}
 	system("pause");
 }
-// ===================== FIM DO MENU PLANOS =====================
 
-// ===================== MENU ATIVIDADES (parte do Luiggi) =====================
 int existeAtividade(int codigo) {
 	FILE *arq;
 	Atividade temp;
@@ -1872,9 +1919,7 @@ void listarAtividades(void) {
 	}
 	system("pause");
 }
-// =================== FIM DO MENU ATIVIDADES ===================
 
-// ===== MENU TREINOS E EQUIPAMENTOS (parte do Igor) =====
 void alterarTreino() {
 	FILE *arq;
 	FILE *arqAlunos;
@@ -3292,8 +3337,6 @@ void cadastrarEquipamento() {
 	}
 }
 
-// ===== FIM DO MENU TREINOS E EQUIPAMENTOS =====
-
 void altera(int codEntidade) {
 	int OpcoesAlteracao;
 
@@ -3958,7 +4001,7 @@ void operacoes(void) {
 	} while(Opcoes != 0);
 }
 
-// ===== OPERAÇÕES: MATRÍCULA, RECEBIMENTO E CANCELAMENTO (regras do ERS da Project Alpha) =====
+// ===== OPERAÇÕES: MATRÍCULA, RECEBIMENTO E CANCELAMENTO =====
 
 // Último dia do mês (considera ano bissexto).
 int ultimoDiaMes(int mes, int ano) {
@@ -4084,6 +4127,16 @@ void gerarCobranca(int codMatricula, float valor, Data vencimento) {
 	}
 }
 
+// Devolve 1 se o arquivo existe e 0 se não.
+int arquivoExiste(char nome[]) {
+	FILE *arq;
+
+	arq = fopen(nome, "rb");
+	if(arq == NULL) return 0;
+	fclose(arq);
+	return 1;
+}
+
 // EFETUAR MATRÍCULA: vincula aluno, plano e pacote. O valor total é
 // (valor mensal do plano + acréscimo do pacote) x meses x (1 - desconto/100).
 // A data de término é a de início + meses do plano e a primeira cobrança sai na hora.
@@ -4101,6 +4154,11 @@ void efetuarMatricula(void) {
 
 	if(!temAlunoAtivo()) {
 		printf("Não Existem Alunos Ativos Cadastrados!\n\n");
+		system("pause");
+		return;
+	}
+	if(arquivoExiste("planos.bin") == 0 || arquivoExiste("pacotes.bin") == 0) {
+		printf("Cadastre Planos e Pacotes antes de efetuar uma matrícula!\n\n");
 		system("pause");
 		return;
 	}
@@ -5102,7 +5160,7 @@ void cadastrarGasto(void) {
 	system("pause");
 }
 
-// ===== PACOTES DE MODALIDADES (ideia do Kauan, adaptada para a struct Pacote) =====
+// ===== PACOTES DE MODALIDADES =====
 // Um pacote agrupa até 5 atividades (as modalidades cadastradas em Atividades) e tem um
 // valor de acréscimo sobre o plano. A Matrícula usa o pacote para calcular o valor total.
 
