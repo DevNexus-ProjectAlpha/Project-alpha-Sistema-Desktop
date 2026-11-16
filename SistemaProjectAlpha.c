@@ -669,7 +669,6 @@ void alterarAluno(void) {
 							do {
 								printf("Informe o Novo CPF: ");
 								fgets(alunos.cpf, 15, stdin);
-								alunos.cpf[15] = '\0';
 								
 								if(validaCPF(alunos.cpf) == 0) printf("Formato de CPF Inválido! \nInsira este Formato XXX.XXX.XXX-XX \nPreencha no Lugar do X Somente Números!\n\n");
 							} while(validaCPF(alunos.cpf) != 1 || cpfDuplicado(alunos.cpf, ENT_ALUNO, alunos.codigo));
@@ -791,7 +790,6 @@ void alterarProfissional(void) {
 							do {
 								printf("Informe o Novo CPF: ");
 								fgets(profissionais.cpf, 15, stdin);
-								profissionais.cpf[15] = '\0';
 								
 								if(validaCPF(profissionais.cpf) == 0) printf("Formato de CPF Inválido! \nInsira este Formato XXX.XXX.XXX-XX \nPreencha no Lugar do X Somente Números!\n\n");
 							} while(validaCPF(profissionais.cpf) != 1 || cpfDuplicado(profissionais.cpf, ENT_PROFISSIONAL, profissionais.codigo));
@@ -3630,7 +3628,6 @@ void altera(int codEntidade) {
 						fflush(stdin);
 						printf("Informe o CPF do Aluno: ");
 						fgets(alunos.cpf, 15, stdin);
-						alunos.cpf[15] = '\0';
 						
 						if(validaCPF(alunos.cpf) == 0) printf("Formato de CPF Inválido! \nInsira este Formato XXX.XXX.XXX-XX \nPreencha no Lugar do X Somente Números!\n\n");
 					} while(validaCPF(alunos.cpf) != 1 || cpfDuplicado(alunos.cpf, ENT_ALUNO, alunos.codigo));
@@ -3690,7 +3687,6 @@ void altera(int codEntidade) {
 						fflush(stdin);
 						printf("Informe o CPF do Profissional: ");
 						fgets(profissionais.cpf, 15, stdin);
-						profissionais.cpf[15] = '\0';
 						
 						if(validaCPF(profissionais.cpf) == 0) printf("Formato de CPF Inválido! \nInsira este Formato XXX.XXX.XXX-XX \nPreencha no Lugar do X Somente Números!\n\n");
 					} while(validaCPF(profissionais.cpf) != 1 || cpfDuplicado(profissionais.cpf, ENT_PROFISSIONAL, profissionais.codigo));
