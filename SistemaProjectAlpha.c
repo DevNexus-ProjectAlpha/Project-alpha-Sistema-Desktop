@@ -436,8 +436,7 @@ int nomeDoProfissional(int codigo, char destino[]) {
 	return achou;
 }
 
-int temProfissionalAtivo(void) 
-{
+int temProfissionalAtivo(void) {
     FILE *arq;
     Profissional temp;
     int encontrou = 0;
@@ -476,6 +475,7 @@ int temAlunoAtivo(void) {
 
     return encontrou;
 }
+
 // Funções de Validação
 int validaExcedeu(char texto[]) {
 	fflush(stdin);
@@ -835,6 +835,7 @@ void alterarProfissional(void) {
 		system("pause");
 	} while (OpcoesAlteracao != 0);
 }
+
 void alterarAvaliacao(void) {
 	FILE *arq;
 	int opcao, codigo, pos, aux, alterou;
@@ -949,6 +950,7 @@ void alterarAvaliacao(void) {
 		system("pause");
 	} while(opcao != 0);
 }
+
 // Funções de Exclusão
 void excluirAluno(void) {
 	FILE *arq, *temp;
@@ -983,18 +985,18 @@ void excluirAluno(void) {
 			if(alunoTemMatriculaAtiva(matricula) == 1) {
 				printf("Não é possível excluir: o aluno possui matrícula ativa!\n");
 			} else {
-			printf("Deseja excluir? S/N: ");
-			if(toupper(getche()) == 'S') {
-				temp = fopen("auxiliar.bin", "wb");
-				rewind(arq);
-				while(fread(&alunos, sizeof(Aluno), 1, arq) == 1)
-				if(alunos.codigo != matricula) fwrite(&alunos, sizeof(Aluno), 1, temp);
-				fclose(arq);
-				fclose(temp);
-				remove("alunos.bin");
-				rename("auxiliar.bin", "alunos.bin");
-				printf("\nO Aluno Foi Excluido com Sucesso!\n");
-			}
+				printf("Deseja excluir? S/N: ");
+				if(toupper(getche()) == 'S') {
+					temp = fopen("auxiliar.bin", "wb");
+					rewind(arq);
+					while(fread(&alunos, sizeof(Aluno), 1, arq) == 1)
+					if(alunos.codigo != matricula) fwrite(&alunos, sizeof(Aluno), 1, temp);
+					fclose(arq);
+					fclose(temp);
+					remove("alunos.bin");
+					rename("auxiliar.bin", "alunos.bin");
+					printf("\nO Aluno Foi Excluido com Sucesso!\n");
+				}
 			}
 		} else printf("\nAluno Não Encontrado!\n");
 	}
@@ -1049,8 +1051,7 @@ void excluirProfissional(void) {
 	system("pause");
 }
 
-void excluirAvaliacao(void) 
-{
+void excluirAvaliacao(void) {
     FILE *arq, *temp;
     int codigo, pos, confirmou = 0;
     char nomeA[61], nomeP[61];
@@ -1115,6 +1116,7 @@ void excluirAvaliacao(void)
     }
     system("pause");
 }
+
 // Funções de Listagem
 void listarAlunos(void) {
 	FILE *arq;
@@ -1289,6 +1291,12 @@ void listarAvaliacoes(void) {
 				printf("Peso: %.2f KG\n", avaliacoes.peso);
 				printf("Altura: %.2f M\n", avaliacoes.altura);
 				printf("IMC: %.2f\n", avaliacoes.imc);
+				if (avaliacoes.imc < 18.5) printf("Classificação: Magreza\n");
+				else if (avaliacoes.imc <= 24.9) printf("Classificação: Peso normal\n");
+				else if (avaliacoes.imc <= 29.9) printf("Classificação: Sobrepeso\n");
+				else if (avaliacoes.imc <= 34.9) printf("Classificação: Obesidade grau I\n");
+				else if (avaliacoes.imc <= 39.9) printf("Classificação: Obesidade grau II\n");
+				else printf("Classificação: Obesidade grau III\n");
 				printf("Percentual de Gordura: %.2f%%\n", avaliacoes.percGordura);
 				printf("Observações: %s\n", avaliacoes.observacoes);
 				printf("Ativo: ");
@@ -3571,7 +3579,7 @@ void altera(int codEntidade) {
 }
 
 //1 - FUNÇÃO DE CADASTRO
-  void cadastrar(void) {
+void cadastrar(void) {
 	FILE *arq;
 	int OpcoesCadastro, pos, ok;
 
@@ -3719,13 +3727,9 @@ void altera(int codEntidade) {
 				cadastrarPlano();
 				break;
 			case 5:
-				if(!temAlunoAtivo()) 
-					printf("\nNão Existem Alunos Ativos Cadastrados!\n\n");
-				else 
-                if(!temProfissionalAtivo()) 
-					printf("\nNão Existem Profissionais Ativos Cadastrados!\n\n");
-				else 
-                {
+				if(!temAlunoAtivo()) printf("\nNão Existem Alunos Ativos Cadastrados!\n\n");
+				else if(!temProfissionalAtivo()) printf("\nNão Existem Profissionais Ativos Cadastrados!\n\n");
+				else {
 					arq = fopen("avaliacoes.bin", "ab+");
 					if(arq == NULL) printf("Erro na Abertura do Arquivo!\n\n");
 					else {
@@ -3781,8 +3785,7 @@ void altera(int codEntidade) {
 						fflush(stdin);
 						printf("Observações: ");
 						fgets(avaliacoes.observacoes, 101, stdin);
-						if(validaExcedeu(avaliacoes.observacoes) == 1) 
-							printf("Somente os Primeiros 100 Caracteres Serão Cadastrados!\n\n");
+						if(validaExcedeu(avaliacoes.observacoes) == 1) printf("Somente os Primeiros 100 Caracteres Serão Cadastrados!\n\n");
 						avaliacoes.ativo = 1;
 						fseek(arq, 0, SEEK_END);
 						fwrite(&avaliacoes, sizeof(Avaliacao), 1, arq);
@@ -3790,7 +3793,14 @@ void altera(int codEntidade) {
 						printf("\n==============================================\n");
 						printf("     AVALIAÇÃO CADASTRADA COM SUCESSO!\n");
 						printf("==============================================\n");
-						printf("IMC: %.2f\n\n", avaliacoes.imc);
+						printf("IMC: %.2f\n", avaliacoes.imc);
+						if (avaliacoes.imc < 18.5) printf("Classificação: Magreza\n");
+						else if (avaliacoes.imc <= 24.9) printf("Classificação: Peso normal\n");
+						else if (avaliacoes.imc <= 29.9) printf("Classificação: Sobrepeso\n");
+						else if (avaliacoes.imc <= 34.9) printf("Classificação: Obesidade grau I\n");
+						else if (avaliacoes.imc <= 39.9) printf("Classificação: Obesidade grau II\n");
+						else printf("Classificação: Obesidade grau III\n");
+						printf("==============================================\n");
 					}
 				}
 				break;
