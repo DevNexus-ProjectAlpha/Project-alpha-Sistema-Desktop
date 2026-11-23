@@ -173,7 +173,7 @@ Cada versão é um commit, com a data em que foi feita e quem trabalhou nela. Us
 
 | Integrante | Partes do sistema |
 |---|---|
-| **Gustavo Santos** | Liderança, estrutura base e integração das partes; Recebimento, Cancelamento, Chamada (Frequência) e Financeiro; Agenda de profissionais; Relatórios 1 a 5 e relatório em ordem alfabética; consulta de aluno e profissional; regras do ERS (CPF duplicado e bloqueio de exclusão); padronização do `validaExcedeu`; adaptação de Treinos, Equipamentos e Pacotes ao padrão do sistema; testes, base de dados de teste e documentos |
+| **Gustavo Santos** | Liderança, estrutura base e integração das partes; Recebimento, Cancelamento, Chamada (Frequência) e Financeiro; Agenda de profissionais; Relatórios 1 a 5 e relatório em ordem alfabética; consulta de aluno e profissional; regras do ERS (CPF duplicado e bloqueio de exclusão); padronização do `validaExcedeu`; adaptação de Treinos, Equipamentos e Pacotes ao padrão do sistema; testes e base de dados de teste; Relatórios de Instruções (v1 a v4) e cronogramas para orientar a equipe; revisão do código e apoio aos integrantes |
 | **William** | Alunos e Profissionais (cadastro, alterar, excluir e listar); validações de CPF, telefone, data e e-mail; classificação do IMC (V3.5) |
 | **Ismael** | Avaliações físicas |
 | **Luiggi** | Atividades |
